@@ -218,3 +218,7 @@ select:disabled {
   padding: 4px 9px;
   font-size: 11.5px;
 }
+
+.ghost-btn.danger:hover {
+  color: #7f4b3a;
+}

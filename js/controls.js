@@ -35,6 +35,11 @@ function bindEvents() {
     render();
   });
 
+  dom.journalBtn.addEventListener("click", () => {
+    state.view = "journal";
+    render();
+  });
+
   dom.portfolioBtn.addEventListener("click", () => {
     state.view = "portfolio";
     render();
@@ -51,7 +56,7 @@ function bindEvents() {
   });
 
   dom.resetBtn.addEventListener("click", () => {
-    if (!window.confirm("Reset all v3 progress and plan items?")) return;
+    if (!window.confirm("Reset progress and plan items?")) return;
     state.checked = {};
     state.favorites = {};
     state.dates = {};
@@ -62,16 +67,17 @@ function bindEvents() {
 }
 
 function updateTabButtons() {
-  const tabActive = !["review", "map", "guide", "portfolio", "reference", "sources"].includes(state.view);
+  const tabActive = !["review", "journal", "map", "guide", "portfolio", "reference", "sources"].includes(state.view);
   dom.tabButtons.forEach((button) => {
     button.classList.toggle("active", tabActive && button.dataset.tab === state.tab);
   });
-  dom.levelFilter.disabled = state.view === "review";
+  dom.levelFilter.disabled = state.view === "review" || state.view === "journal";
 }
 
 function updateViewButtons() {
   dom.guideBtn.classList.toggle("active", state.view === "guide" || state.view === "map");
   dom.reviewBtn.classList.toggle("active", state.view === "review");
+  dom.journalBtn.classList.toggle("active", state.view === "journal");
   dom.portfolioBtn.classList.toggle("active", state.view === "portfolio");
   dom.referenceBtn.classList.toggle("active", state.view === "reference");
   dom.sourcesBtn.classList.toggle("active", state.view === "sources");

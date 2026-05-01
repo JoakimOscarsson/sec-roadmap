@@ -47,7 +47,8 @@ p { margin: 0 0 12px; color: var(--text-2); }
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -77,6 +78,7 @@ a:hover { color: var(--text); }
 button:focus-visible,
 input:focus-visible,
 select:focus-visible,
+textarea:focus-visible,
 .nav-link:focus-visible,
 .overview-card:focus-visible,
 .favorite-btn:focus-visible,

@@ -11,6 +11,7 @@ const dom = {
   main: document.getElementById("main"),
   guideBtn: document.getElementById("guideBtn"),
   reviewBtn: document.getElementById("reviewBtn"),
+  journalBtn: document.getElementById("journalBtn"),
   portfolioBtn: document.getElementById("portfolioBtn"),
   referenceBtn: document.getElementById("referenceBtn"),
   sourcesBtn: document.getElementById("sourcesBtn"),

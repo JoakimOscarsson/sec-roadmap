@@ -6,8 +6,9 @@ function render() {
     state.view = "overview";
   }
 
-  const visible = state.tab === "favorites" || state.tab === "custom" ? [] : getVisibleChapters();
-  if (state.tab !== "favorites" && state.tab !== "custom") {
+  const standaloneView = ["map", "guide", "review", "journal", "portfolio", "reference", "sources"].includes(state.view);
+  const visible = standaloneView || state.tab === "favorites" || state.tab === "custom" ? [] : getVisibleChapters();
+  if (!standaloneView && state.tab !== "favorites" && state.tab !== "custom") {
     ensureSelection(visible);
     if (state.tab === "specializations") ensureSpecializationTrack(visible);
   }
@@ -20,6 +21,8 @@ function render() {
     renderSupportView(roadmap.support.guide, "Guide", "Roadmap Guide");
   } else if (state.view === "review") {
     renderReview();
+  } else if (state.view === "journal") {
+    renderJournal();
   } else if (state.view === "portfolio") {
     renderSupportView(roadmap.support.portfolio, "Portfolio");
   } else if (state.view === "reference") {
@@ -69,6 +72,14 @@ function renderOverallProgress(visible) {
     const reviewItems = getReviewItems();
     dom.progressScope.textContent = "Review";
     dom.overallPct.textContent = `${reviewItems.length}`;
+    dom.overallBar.style.width = "0%";
+    return;
+  }
+
+  if (state.view === "journal") {
+    const entries = getJournalEntries();
+    dom.progressScope.textContent = "Journal";
+    dom.overallPct.textContent = `${entries.length}`;
     dom.overallBar.style.width = "0%";
     return;
   }

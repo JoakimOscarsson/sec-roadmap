@@ -4,6 +4,15 @@ const ROADMAP_DB_VERSION = 1;
 const ROADMAP_STATE_STORE = "appState";
 const ROADMAP_STATE_KEY = "current";
 
+const JOURNAL_TYPES = [
+  "Study note",
+  "Practice log",
+  "Reflection",
+  "Question",
+  "Deliverable note",
+  "Resource note"
+];
+
 const SPECIALIZATION_TRACK_NAMES = {
   A: "Embedded R&D",
   B: "AI / LLM / Agentic Security",

@@ -6,6 +6,7 @@ function createDefaultState() {
     reviewComplete: {},
     portfolio: {},
     custom: [],
+    journal: [],
     tab: "core",
     query: "",
     level: "all",
@@ -30,6 +31,7 @@ function normalizeState(saved) {
       reviewComplete: saved?.reviewComplete && typeof saved.reviewComplete === "object" ? saved.reviewComplete : {},
       portfolio: saved?.portfolio && typeof saved.portfolio === "object" ? saved.portfolio : {},
       custom: Array.isArray(saved?.custom) ? saved.custom.filter(isValidCustomTopic) : [],
+      journal: Array.isArray(saved?.journal) ? saved.journal.map(normalizeJournalEntry).filter(Boolean) : [],
       tab: validTabs.includes(saved?.tab) ? saved.tab : "core",
       query: typeof saved?.query === "string" ? saved.query : "",
       level: ["all", "0", "1", "2", "3"].includes(saved?.level) ? saved.level : "all",
@@ -38,7 +40,7 @@ function normalizeState(saved) {
         specializations: saved?.selected?.specializations || ""
       },
       specializationTrack: typeof saved?.specializationTrack === "string" ? saved.specializationTrack : "",
-      view: ["overview", "track", "chapter", "map", "guide", "review", "portfolio", "reference", "sources"].includes(saved?.view)
+      view: ["overview", "track", "chapter", "map", "guide", "review", "journal", "portfolio", "reference", "sources"].includes(saved?.view)
         ? saved.view
         : "overview"
     };

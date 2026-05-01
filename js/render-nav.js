@@ -12,6 +12,11 @@ function renderNav(visible) {
     return;
   }
 
+  if (state.view === "journal") {
+    renderJournalNav();
+    return;
+  }
+
   if (state.tab === "favorites") {
     renderFavoriteNav();
     return;

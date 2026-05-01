@@ -39,7 +39,7 @@ function renderJournalExpansion(entry, expanded) {
 
   const inner = element("div", "journal-expand-inner");
   const content = element("div", "journal-expand-content");
-  content.append(element("p", "journal-body", entry.body || "No notes."));
+  content.append(renderJournalEditableBody(entry));
 
   const links = renderJournalLinks(entry);
   if (links) content.append(links);
@@ -47,6 +47,24 @@ function renderJournalExpansion(entry, expanded) {
   inner.append(content);
   panel.append(inner);
   return panel;
+}
+
+function renderJournalEditableBody(entry) {
+  const body = element("p", "journal-body journal-body-edit", entry.body || "No notes.");
+  body.tabIndex = 0;
+  body.setAttribute("role", "button");
+  body.setAttribute("aria-label", `Edit ${entry.title}`);
+  body.title = "Click to edit";
+  body.addEventListener("click", () => {
+    if (typeof window !== "undefined" && typeof window.getSelection === "function" && window.getSelection().toString()) return;
+    openJournalEdit(entry.id);
+  });
+  body.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openJournalEdit(entry.id);
+  });
+  return body;
 }
 
 function renderJournalLinks(entry) {
@@ -114,17 +132,6 @@ function renderJournalDateEditor(entry) {
 
 function renderJournalActions(entry) {
   const actions = element("div", "journal-row-actions");
-  const edit = element("button", "icon-btn", "✎");
-  edit.type = "button";
-  edit.title = "Edit journal entry";
-  edit.setAttribute("aria-label", `Edit ${entry.title}`);
-  edit.addEventListener("click", () => {
-    editingJournalId = entry.id;
-    creatingJournalEntry = false;
-    render();
-    dom.main.scrollIntoView({ block: "start" });
-  });
-
   const remove = element("button", "icon-btn danger", "×");
   remove.type = "button";
   remove.title = "Delete journal entry";
@@ -133,8 +140,15 @@ function renderJournalActions(entry) {
     if (expandedJournalId === entry.id) expandedJournalId = "";
     deleteJournalEntry(entry.id);
   });
-  actions.append(edit, remove);
+  actions.append(remove);
   return actions;
+}
+
+function openJournalEdit(entryId) {
+  editingJournalId = entryId;
+  creatingJournalEntry = false;
+  render();
+  dom.main.scrollIntoView({ block: "start" });
 }
 
 function toggleJournalEntryExpansion(entryId) {

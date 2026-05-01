@@ -325,6 +325,16 @@
   white-space: pre-wrap;
 }
 
+.journal-body-edit {
+  cursor: text;
+  border-radius: 3px;
+}
+
+.journal-body-edit:hover,
+.journal-body-edit:focus-visible {
+  background: rgba(60, 50, 30, 0.026);
+}
+
 .journal-links {
   display: flex;
   flex-wrap: wrap;

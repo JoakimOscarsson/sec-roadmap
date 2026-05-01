@@ -6,32 +6,36 @@ function renderJournal() {
   header.append(element("p", "path-note", `${entries.length} entries shown.`));
   dom.main.append(header, renderJournalToolbar());
 
-  const createItem = renderJournalCreateItem();
-  if (createItem) {
-    const createList = element("div", "journal-list journal-create-list");
-    createList.append(createItem);
-    dom.main.append(createList);
-  }
-
   const form = renderJournalForm();
   if (form) dom.main.append(form);
 
-  if (!entries.length) {
-    if (creatingJournalEntry) return;
+  const groups = getJournalGroupsForRender(entries);
+  if (!groups.length) {
     dom.main.append(element("p", "empty", state.query.trim() ? "No journal entries match the current search." : "No journal entries yet."));
     return;
   }
 
   const wrapper = element("div", "journal-groups");
-  groupJournalEntries(entries).forEach((group) => {
+  groups.forEach((group) => {
     const section = element("section", "journal-group");
     section.id = `journal-${group.month}`;
     const heading = element("div", "journal-group-heading");
-    heading.append(element("h3", "", group.title), element("span", "review-count", `${group.items.length}`));
+    heading.append(
+      element("h3", "", group.title),
+      element("span", "review-count", `${journalGroupDisplayCount(group)}`)
+    );
     section.append(heading);
 
     const list = element("div", "journal-list");
-    group.items.forEach((entry) => list.append(renderJournalEntry(entry)));
+    let createItemRendered = false;
+    group.items.forEach((entry) => {
+      if (shouldRenderCreateItemBeforeEntry(group, entry, createItemRendered)) {
+        list.append(renderJournalCreateItem());
+        createItemRendered = true;
+      }
+      list.append(renderJournalEntry(entry));
+    });
+    if (journalGroupIncludesCreateItem(group) && !createItemRendered) list.append(renderJournalCreateItem());
     section.append(list);
     wrapper.append(section);
   });
@@ -56,7 +60,7 @@ function renderJournalToolbar() {
 }
 
 function renderJournalNav() {
-  const groups = groupJournalEntries(getJournalEntries());
+  const groups = getJournalGroupsForRender(getJournalEntries());
   if (!groups.length) {
     const item = element("li");
     item.append(element("p", "empty", state.query.trim() ? "No matching journal entries." : "No journal entries yet."));
@@ -71,7 +75,7 @@ function renderJournalNav() {
     row.append(
       element("span", "journal-nav-dot", ""),
       element("span", "nav-title-text", group.title),
-      element("span", "nav-prog", `${group.items.length}`)
+      element("span", "nav-prog", `${journalGroupDisplayCount(group)}`)
     );
     row.addEventListener("click", () => {
       document.getElementById(`journal-${group.month}`)?.scrollIntoView({ block: "start" });
@@ -86,4 +90,31 @@ function renderJournalNav() {
     item.append(row);
     dom.nav.append(item);
   });
+}
+
+function getJournalGroupsForRender(entries) {
+  const groups = groupJournalEntries(entries);
+  if (creatingJournalEntry && !groups.some((group) => group.month === todayJournalMonth())) {
+    groups.push({ month: todayJournalMonth(), title: formatJournalMonth(todayJournalMonth()), items: [] });
+  }
+  return groups.sort((left, right) => String(right.month).localeCompare(String(left.month)));
+}
+
+function shouldRenderCreateItemBeforeEntry(group, entry, alreadyRendered) {
+  return creatingJournalEntry
+    && !alreadyRendered
+    && journalGroupIncludesCreateItem(group)
+    && dayNumber(todayDate()) >= dayNumber(entry.date);
+}
+
+function journalGroupIncludesCreateItem(group) {
+  return creatingJournalEntry && group.month === todayJournalMonth();
+}
+
+function journalGroupDisplayCount(group) {
+  return group.items.length + (journalGroupIncludesCreateItem(group) ? 1 : 0);
+}
+
+function todayJournalMonth() {
+  return todayDate().slice(0, 7);
 }

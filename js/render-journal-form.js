@@ -5,7 +5,9 @@ function openJournalCreate() {
   editingJournalId = "";
   creatingJournalEntry = true;
   render();
-  dom.main.scrollIntoView({ block: "start" });
+  if (typeof document.querySelector === "function") {
+    document.querySelector(".journal-create-card")?.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function closeJournalEditor() {
@@ -91,7 +93,7 @@ function renderJournalCreateItem() {
   body.placeholder = "Notes";
   body.className = "journal-note-input journal-inline-note";
   body.value = "";
-  body.addEventListener("input", () => applyJournalLiveInput(form, { title, subtitle, body }));
+  body.addEventListener("input", () => handleJournalInlineBodyInput(form, { title, subtitle, body }));
   body.addEventListener("keydown", (event) => {
     if (!isSaveShortcut(event)) return;
     event.preventDefault();
@@ -114,11 +116,13 @@ function renderJournalCreateItem() {
   const content = element("div", "journal-inline-content");
   content.append(title, subtitle);
   const side = element("div", "journal-row-side journal-inline-side");
-  side.append(date, renderJournalFormActions(null, controls));
+  side.append(date);
 
   const row = element("div", "journal-row journal-inline-row");
   row.append(content, side);
-  form.append(row, body);
+  const noteWrap = element("div", "journal-inline-note-wrap");
+  noteWrap.append(body, renderJournalFormActions(null, controls));
+  form.append(row, noteWrap);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     saveJournalForm(null, controls);
@@ -126,7 +130,10 @@ function renderJournalCreateItem() {
   form.addEventListener("keydown", handleJournalEditorKeydown);
   card.append(form);
 
-  setTimeout(() => body.focus(), 0);
+  setTimeout(() => {
+    body.focus();
+    resizeJournalInlineNote(body);
+  }, 0);
   return card;
 }
 
@@ -180,6 +187,11 @@ function applyJournalLiveInput(form, controls) {
   form.dataset.commandActive = String(controls.body.value.includes("/"));
 }
 
+function handleJournalInlineBodyInput(form, controls) {
+  applyJournalLiveInput(form, controls);
+  resizeJournalInlineNote(controls.body);
+}
+
 function applyJournalHeadingShortcuts(controls) {
   while (true) {
     const match = controls.body.value.match(/^(#{2}|#)\s*([^\r\n]+)\r?\n/);
@@ -198,4 +210,16 @@ function applyJournalHeadingShortcuts(controls) {
 
 function isSaveShortcut(event) {
   return event.key === "Enter" && (event.ctrlKey || event.metaKey);
+}
+
+function resizeJournalInlineNote(body) {
+  const viewportBottomPadding = 28;
+  const minHeight = 180;
+  const rect = body.getBoundingClientRect();
+  const maxHeight = Math.max(minHeight, window.innerHeight - rect.top - viewportBottomPadding);
+
+  body.style.height = "auto";
+  const nextHeight = Math.min(Math.max(body.scrollHeight, minHeight), maxHeight);
+  body.style.height = `${nextHeight}px`;
+  body.style.overflowY = body.scrollHeight > maxHeight ? "auto" : "hidden";
 }

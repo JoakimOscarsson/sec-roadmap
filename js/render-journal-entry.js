@@ -5,11 +5,7 @@ function renderJournalEntry(entry) {
   const expanded = expandedJournalIds.has(entry.id);
   const body = expanded ? entry.body : trimText(entry.body, 260);
   const meta = element("div", "journal-meta");
-  meta.append(
-    element("span", "", formatDate(entry.date)),
-    element("span", "", entry.type)
-  );
-  entry.tags.forEach((tag) => meta.append(element("span", "journal-tag", tag)));
+  meta.append(element("span", "", formatDate(entry.date)));
 
   const title = element("h3", "", entry.title);
   const text = element("p", "journal-body", body || "No notes.");

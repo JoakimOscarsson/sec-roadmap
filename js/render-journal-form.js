@@ -208,7 +208,8 @@ function handleJournalBodyKeydown(event, form, entry, controls, options = {}) {
   if (handleJournalCommandKeydown(event, form, controls, options)) return;
 
   if (event.key !== "Enter") return;
-  applyJournalLineCommandOnEnter(event, form, controls, options);
+  if (applyJournalLineCommandOnEnter(event, form, controls, options)) return;
+  applyJournalMarkdownLineOnEnter(event, controls, options);
 }
 
 function isSaveShortcut(event) {

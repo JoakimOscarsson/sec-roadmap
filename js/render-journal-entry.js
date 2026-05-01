@@ -56,7 +56,7 @@ function renderJournalExpansion(entry, expanded) {
 }
 
 function renderJournalEditableBody(entry) {
-  const body = element("p", "journal-body journal-body-edit", entry.body || "No notes.");
+  const body = renderJournalMarkdownBody(entry.body);
   body.tabIndex = 0;
   body.setAttribute("role", "button");
   body.setAttribute("aria-label", `Edit ${entry.title}`);

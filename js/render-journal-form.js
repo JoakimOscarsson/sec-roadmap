@@ -41,8 +41,10 @@ function renderJournalForm() {
   body.placeholder = "Notes";
   body.className = "journal-note-input";
   body.value = entry?.body || "";
-  body.addEventListener("input", () => applyJournalLiveInput(form, { title, subtitle, body }));
-  const controls = { title, subtitle, body };
+  const bodyHost = element("div", "journal-command-host journal-focused-note-wrap");
+  const controls = createJournalEditorControls(entry, title, subtitle, body);
+  controls.commandHost = bodyHost;
+  body.addEventListener("input", () => applyJournalLiveInput(form, controls));
   body.addEventListener("keydown", (event) => handleJournalBodyKeydown(event, form, entry, controls));
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
@@ -57,8 +59,9 @@ function renderJournalForm() {
   });
 
   const header = element("div", "journal-editor-header");
-  header.append(title, subtitle, date);
-  form.append(header, body, renderJournalFormActions(entry, controls));
+  header.append(title, subtitle, renderJournalEditorMeta(controls), date);
+  bodyHost.append(body);
+  form.append(header, bodyHost, renderJournalFormActions(entry, controls));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
     saveJournalForm(entry, controls);
@@ -100,8 +103,8 @@ function renderJournalInlineEditor(entry, cardClass) {
   body.placeholder = "Notes";
   body.className = "journal-note-input journal-inline-note";
   body.value = entry?.body || "";
-  body.addEventListener("input", () => handleJournalInlineBodyInput(form, { title, subtitle, body }));
-  const controls = { title, subtitle, body };
+  const controls = createJournalEditorControls(entry, title, subtitle, body);
+  body.addEventListener("input", () => handleJournalInlineBodyInput(form, controls));
   body.addEventListener("keydown", (event) => handleJournalBodyKeydown(event, form, entry, controls, { resize: true }));
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
@@ -116,13 +119,14 @@ function renderJournalInlineEditor(entry, cardClass) {
   });
 
   const content = element("div", "journal-inline-content");
-  content.append(title, subtitle);
+  content.append(title, subtitle, renderJournalEditorMeta(controls));
   const side = element("div", "journal-row-side journal-inline-side");
   side.append(date);
 
   const row = element("div", "journal-row journal-inline-row");
   row.append(content, side);
   const noteWrap = element("div", "journal-inline-note-wrap");
+  controls.commandHost = noteWrap;
   noteWrap.append(body, renderJournalFormActions(entry, controls));
   form.append(row, noteWrap);
   form.addEventListener("submit", (event) => {
@@ -169,9 +173,9 @@ function saveJournalForm(entry, controls) {
     subtitle: controls.subtitle.textContent.trim(),
     date: entry?.date || todayDate(),
     type: entry?.type || JOURNAL_TYPES[0],
-    linkedItemKeys: entry?.linkedItemKeys || [],
-    tags: entry?.tags || [],
-    body: controls.body.value
+    linkedItemKeys: uniqueJournalLinks(controls.linkedItemKeys || []),
+    tags: uniqueJournalTags(controls.tags || []),
+    body: unescapeJournalBody(controls.body.value)
   };
 
   if (entry) {
@@ -186,20 +190,22 @@ function saveJournalForm(entry, controls) {
 }
 
 function applyJournalLiveInput(form, controls) {
-  form.dataset.commandActive = String(controls.body.value.includes("/"));
+  handleJournalCommandInput(form, controls);
 }
 
 function handleJournalInlineBodyInput(form, controls) {
-  applyJournalLiveInput(form, controls);
-  resizeJournalInlineNote(controls.body);
+  handleJournalCommandInput(form, controls, { resize: true });
 }
 
 function handleJournalBodyKeydown(event, form, entry, controls, options = {}) {
   if (isSaveShortcut(event)) {
     event.preventDefault();
+    closeJournalCommandMenu(controls);
     saveJournalForm(entry, controls);
     return;
   }
+
+  if (handleJournalCommandKeydown(event, form, controls, options)) return;
 
   if (event.key !== "Enter") return;
   if (applyJournalHeadingShortcutOnEnter(event, controls)) {
@@ -249,6 +255,10 @@ function nextLineStart(value, lineEnd) {
   if (value.slice(lineEnd, lineEnd + 2) === "\r\n") return lineEnd + 2;
   if (value[lineEnd] === "\n" || value[lineEnd] === "\r") return lineEnd + 1;
   return lineEnd;
+}
+
+function unescapeJournalBody(value) {
+  return String(value).replace(/\\\//g, "/");
 }
 
 function resizeJournalInlineNote(body) {

@@ -93,6 +93,55 @@
   font-size: 12.5px;
 }
 
+.journal-editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 0;
+}
+
+.journal-editor-meta[hidden] {
+  display: none;
+}
+
+.journal-editor-chip {
+  appearance: none;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--text-2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+.journal-editor-chip::before {
+  content: "#";
+  color: var(--muted);
+  margin-right: 1px;
+}
+
+.journal-editor-chip.link::before {
+  content: "↗";
+  margin-right: 4px;
+}
+
+.journal-editor-chip:hover {
+  border-color: var(--accent-soft);
+  color: var(--text);
+}
+
+.journal-command-host {
+  position: relative;
+  min-height: 0;
+}
+
+.journal-focused-note-wrap {
+  display: grid;
+  min-height: 0;
+}
+
 .journal-note-input {
   width: 100%;
   min-width: 0;
@@ -225,6 +274,24 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.journal-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.journal-entry-tag,
+.journal-entry-link-count {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.2;
+}
+
+.journal-entry-tag::before {
+  content: "#";
 }
 
 .journal-row-side {
@@ -385,6 +452,60 @@
 .journal-link:hover {
   border-color: var(--accent-soft);
   color: var(--text);
+}
+
+.journal-command-menu {
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: grid;
+  gap: 2px;
+  max-height: 230px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg);
+  box-shadow: 0 8px 22px rgba(60, 50, 30, 0.13);
+  padding: 5px;
+}
+
+.journal-inline-note-wrap .journal-command-menu {
+  bottom: 44px;
+}
+
+.journal-command-item {
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  padding: 6px 7px;
+  text-align: left;
+}
+
+.journal-command-item:hover,
+.journal-command-item.active {
+  background: rgba(60, 50, 30, 0.055);
+}
+
+.journal-command-label {
+  font-size: 12.5px;
+  line-height: 1.25;
+}
+
+.journal-command-detail {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .journal-nav-dot {

@@ -22,8 +22,10 @@ function renderJournalRow(entry, expanded) {
   const content = element("div", "journal-row-content");
   const title = element("h3", "journal-card-title", entry.title);
   const subtitle = entry.subtitle ? element("div", "journal-card-subtitle", entry.subtitle) : null;
+  const meta = renderJournalEntryMeta(entry);
   content.append(title);
   if (subtitle) content.append(subtitle);
+  if (meta) content.append(meta);
 
   toggle.append(content);
 
@@ -83,6 +85,19 @@ function renderJournalLinks(entry) {
     wrapper.append(button);
   });
   return wrapper;
+}
+
+function renderJournalEntryMeta(entry) {
+  const tags = entry.tags || [];
+  const linkedItemKeys = entry.linkedItemKeys || [];
+  if (!tags.length && !linkedItemKeys.length) return null;
+
+  const meta = element("div", "journal-entry-meta");
+  tags.forEach((tag) => meta.append(element("span", "journal-entry-tag", tag)));
+  if (linkedItemKeys.length) {
+    meta.append(element("span", "journal-entry-link-count", `${linkedItemKeys.length} link${linkedItemKeys.length === 1 ? "" : "s"}`));
+  }
+  return meta;
 }
 
 function renderJournalDate(entry) {

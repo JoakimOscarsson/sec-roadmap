@@ -6,18 +6,12 @@ const JOURNAL_COMMANDS = [
   { id: "plan", label: "/plan", detail: "Link an item from your current plan" }
 ];
 
-function createJournalEditorControls(entry, title, subtitle, body) {
+function createJournalEditorControls(entry, title, subtitle) {
   return {
     title,
     subtitle,
-    body,
     tags: uniqueJournalTags(entry?.tags || []),
     linkedItemKeys: uniqueJournalLinks(entry?.linkedItemKeys || []),
-    commandHost: null,
-    commandMenu: null,
-    commandOptions: [],
-    commandActiveIndex: 0,
-    commandRange: null,
     meta: null
   };
 }
@@ -64,76 +58,6 @@ function renderJournalEditorLink(controls, key, label) {
     refreshJournalEditorMeta(controls);
   });
   return chip;
-}
-
-function handleJournalCommandInput(form, controls, options = {}) {
-  controls.commandResize = Boolean(options.resize);
-  processCompletedJournalTagCommand(controls);
-  syncJournalCommandMenu(form, controls);
-  if (options.resize) resizeJournalInlineNote(controls.body);
-}
-
-function handleJournalCommandKeydown(event, form, controls, options = {}) {
-  if (!controls.commandMenu) return false;
-
-  if (event.key === "Escape") {
-    event.preventDefault();
-    if (typeof event.stopPropagation === "function") event.stopPropagation();
-    closeJournalCommandMenu(controls);
-    form.dataset.commandActive = "false";
-    return true;
-  }
-
-  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-    event.preventDefault();
-    const direction = event.key === "ArrowDown" ? 1 : -1;
-    setJournalCommandActiveIndex(controls, controls.commandActiveIndex + direction);
-    return true;
-  }
-
-  if ((event.key === "Enter" || event.key === "Tab") && controls.commandOptions.length) {
-    event.preventDefault();
-    selectJournalCommandOption(form, controls, controls.commandOptions[controls.commandActiveIndex], options);
-    return true;
-  }
-
-  return false;
-}
-
-function syncJournalCommandMenu(form, controls) {
-  const range = getJournalCommandRange(controls.body);
-  controls.commandRange = range;
-  form.dataset.commandActive = String(Boolean(range));
-  if (!range) {
-    closeJournalCommandMenu(controls);
-    return;
-  }
-
-  const options = journalCommandOptions(range);
-  if (!options.length) {
-    closeJournalCommandMenu(controls);
-    return;
-  }
-
-  controls.commandOptions = options;
-  controls.commandActiveIndex = Math.min(controls.commandActiveIndex, options.length - 1);
-  renderJournalCommandMenu(form, controls);
-}
-
-function getJournalCommandRange(body) {
-  if (body.selectionStart !== body.selectionEnd) return null;
-
-  const caret = body.selectionStart;
-  const value = body.value;
-  for (let index = caret - 1; index >= 0; index -= 1) {
-    const char = value[index];
-    if (char === "\n" || char === "\r") break;
-    if (char !== "/") continue;
-    if (index > 0 && value[index - 1] === "\\") continue;
-    if (index > 0 && !/\s/.test(value[index - 1])) continue;
-    return { start: index, end: caret, text: value.slice(index, caret) };
-  }
-  return null;
 }
 
 function journalCommandOptions(range) {
@@ -202,160 +126,10 @@ function journalLinkOptionSearchText(target) {
   return `${plainText(target.itemText)} ${journalTargetContext(target)}`.toLowerCase();
 }
 
-function renderJournalCommandMenu(form, controls) {
-  if (!controls.commandHost) return;
-  controls.commandMenu?.remove();
-  controls.commandMenu = null;
-
-  const menu = element("div", "journal-command-menu");
-  menu.setAttribute("role", "listbox");
-  controls.commandOptions.forEach((option, index) => {
-    const item = element("button", `journal-command-item${index === controls.commandActiveIndex ? " active" : ""}`);
-    item.type = "button";
-    item.setAttribute("role", "option");
-    item.setAttribute("aria-selected", String(index === controls.commandActiveIndex));
-    item.append(element("span", "journal-command-label", option.label), element("span", "journal-command-detail", option.detail));
-    item.addEventListener("mousedown", (event) => event.preventDefault());
-    item.addEventListener("click", () => selectJournalCommandOption(form, controls, option, { resize: controls.commandResize }));
-    menu.append(item);
-  });
-
-  controls.commandMenu = menu;
-  controls.commandHost.append(menu);
-}
-
-function setJournalCommandActiveIndex(controls, nextIndex) {
-  if (!controls.commandOptions.length) return;
-  const lastIndex = controls.commandOptions.length - 1;
-  controls.commandActiveIndex = nextIndex < 0 ? lastIndex : nextIndex > lastIndex ? 0 : nextIndex;
-  if (!controls.commandMenu) return;
-  Array.from(controls.commandMenu.children).forEach((item, index) => {
-    item.classList.toggle("active", index === controls.commandActiveIndex);
-    item.setAttribute("aria-selected", String(index === controls.commandActiveIndex));
-  });
-}
-
-function selectJournalCommandOption(form, controls, option, options = {}) {
-  if (!option) return;
-  if (option.type === "command") {
-    replaceJournalCommandText(controls, `/${option.id} `);
-    syncJournalCommandMenu(form, controls);
-    return;
-  }
-  if (option.type === "tag") {
-    addJournalTag(controls, option.tag);
-    removeJournalCommandText(controls);
-  }
-  if (option.type === "link") {
-    addJournalLink(controls, option.key);
-    removeJournalCommandText(controls);
-  }
-  closeJournalCommandMenu(controls);
-  form.dataset.commandActive = "false";
-  refreshJournalEditorMeta(controls);
-  if (options.resize) resizeJournalInlineNote(controls.body);
-}
-
-function processCompletedJournalTagCommand(controls) {
-  const tag = completedJournalTagCommand(controls.body);
-  if (!tag) return false;
-
-  controls.body.value = controls.body.value.slice(0, tag.start) + controls.body.value.slice(tag.end);
-  setJournalBodySelection(controls.body, tag.start);
-  addJournalTag(controls, tag.value);
-  refreshJournalEditorMeta(controls);
-  closeJournalCommandMenu(controls);
-  return true;
-}
-
-function completedJournalTagCommand(body) {
-  if (body.selectionStart !== body.selectionEnd) return null;
-
-  const caret = body.selectionStart;
-  const before = body.value.slice(0, caret);
-  const patterns = [
-    /(^|\s)\/tag\s+"([^"]+)"$/i,
-    /(^|\s)\/"([^"]+)"$/,
-    /(^|\s)\/tag\s+([^\s"]+)\s$/i,
-    /(^|\s)\/([^\s"/][^\s]*)\s$/i
-  ];
-
-  for (const pattern of patterns) {
-    const match = pattern.exec(before);
-    if (!match) continue;
-    const value = match[2].trim();
-    if (!value) continue;
-    if (pattern === patterns[3] && isReservedJournalCommand(value)) continue;
-    return {
-      value,
-      start: match.index + match[1].length,
-      end: caret
-    };
-  }
-  return null;
-}
-
-function applyJournalLineCommandOnEnter(event, form, controls, options = {}) {
-  if (controls.body.selectionStart !== controls.body.selectionEnd) return false;
-
-  const range = getJournalCommandRange(controls.body);
-  if (!range) return false;
-
-  const title = range.text.match(/^\/(?:t|title)\s+(.+)$/i);
-  if (title) {
-    return applyJournalTextCommand(event, form, controls, range, "title", title[1], options);
-  }
-
-  const subtitle = range.text.match(/^\/(?:st|subtitle|substitle)\s+(.+)$/i);
-  if (subtitle) {
-    return applyJournalTextCommand(event, form, controls, range, "subtitle", subtitle[1], options);
-  }
-
-  return false;
-}
-
-function applyJournalTextCommand(event, form, controls, range, target, rawValue, options = {}) {
-  const value = unquoteJournalCommandValue(rawValue).trim();
-  if (!value) return false;
-
-  event.preventDefault();
-  if (target === "title") {
-    controls.title.value = value;
-  } else {
-    controls.subtitle.textContent = value;
-    controls.subtitle.hidden = false;
-  }
-
-  controls.commandRange = range;
-  removeJournalCommandText(controls);
-  closeJournalCommandMenu(controls);
-  form.dataset.commandActive = "false";
-  if (options.resize) resizeJournalInlineNote(controls.body);
-  return true;
-}
-
 function unquoteJournalCommandValue(value) {
   const trimmed = String(value).trim();
   const quoted = trimmed.match(/^"([^"]+)"$/);
   return quoted ? quoted[1] : trimmed;
-}
-
-function replaceJournalCommandText(controls, value) {
-  const range = controls.commandRange;
-  if (!range) return;
-
-  const body = controls.body;
-  body.value = body.value.slice(0, range.start) + value + body.value.slice(range.end);
-  setJournalBodySelection(body, range.start + value.length);
-}
-
-function removeJournalCommandText(controls) {
-  const range = controls.commandRange;
-  if (!range) return;
-
-  const body = controls.body;
-  body.value = body.value.slice(0, range.start) + body.value.slice(range.end);
-  setJournalBodySelection(body, range.start);
 }
 
 function addJournalTag(controls, tag) {
@@ -373,21 +147,6 @@ function addJournalLink(controls, key) {
 function isReservedJournalCommand(value) {
   const normalized = String(value).toLowerCase();
   return JOURNAL_COMMANDS.some((command) => command.id === normalized || (command.aliases || []).includes(normalized));
-}
-
-function closeJournalCommandMenu(controls) {
-  controls.commandMenu?.remove();
-  controls.commandMenu = null;
-  controls.commandOptions = [];
-  controls.commandActiveIndex = 0;
-  controls.commandRange = null;
-}
-
-function setJournalBodySelection(body, position) {
-  if (typeof body.setSelectionRange === "function") body.setSelectionRange(position, position);
-  body.selectionStart = position;
-  body.selectionEnd = position;
-  body.focus();
 }
 
 function uniqueJournalTags(tags) {

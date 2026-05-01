@@ -1,3 +1,12 @@
+import {
+  destroyAllJournalEditors,
+  destroyJournalEditor,
+  focusJournalEditor,
+  getJournalEditorMarkdown,
+  mountJournalEditor,
+  resizeJournalEditor
+} from "./journal-editor-adapter.js";
+import { renderJournalMarkdownBody } from "./journal-markdown.js";
 import contentUrl from "../content.js?url";
 import configUrl from "./config.js?url";
 import storageUrl from "./storage.js?url";
@@ -22,13 +31,21 @@ import renderSupportUrl from "./render-support.js?url";
 import renderCustomUrl from "./render-custom.js?url";
 import renderReviewUrl from "./render-review.js?url";
 import journalCommandsUrl from "./journal-commands.js?url";
-import journalMarkdownUrl from "./journal-markdown.js?url";
-import journalEditorAdapterUrl from "./journal-editor-adapter.js?url";
 import renderJournalFormUrl from "./render-journal-form.js?url";
 import renderJournalEntryUrl from "./render-journal-entry.js?url";
 import renderJournalUrl from "./render-journal.js?url";
 import renderAppUrl from "./render-app.js?url";
 import appUrl from "../app.js?url";
+
+Object.assign(window, {
+  destroyAllJournalEditors,
+  destroyJournalEditor,
+  focusJournalEditor,
+  getJournalEditorMarkdown,
+  mountJournalEditor,
+  resizeJournalEditor,
+  renderJournalMarkdownBody
+});
 
 const legacyScripts = [
   contentUrl,
@@ -55,8 +72,6 @@ const legacyScripts = [
   renderCustomUrl,
   renderReviewUrl,
   journalCommandsUrl,
-  journalMarkdownUrl,
-  journalEditorAdapterUrl,
   renderJournalFormUrl,
   renderJournalEntryUrl,
   renderJournalUrl,

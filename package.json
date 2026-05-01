@@ -5,9 +5,22 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "check:js": "for f in app.js js/*.js; do node --check \"$f\" || exit 1; done"
+    "check:js": "for f in app.js js/*.js tests/*.mjs; do node --check \"$f\" || exit 1; done",
+    "test:smoke": "npm run build && node tests/editor-smoke.mjs"
   },
   "devDependencies": {
+    "happy-dom": "^20.9.0",
     "vite": "^7.1.12"
+  },
+  "dependencies": {
+    "@milkdown/core": "^7.20.0",
+    "@milkdown/plugin-clipboard": "^7.20.0",
+    "@milkdown/plugin-history": "^7.20.0",
+    "@milkdown/plugin-listener": "^7.20.0",
+    "@milkdown/preset-commonmark": "^7.20.0",
+    "@milkdown/preset-gfm": "^7.20.0",
+    "@milkdown/utils": "^7.20.0",
+    "markdown-it": "^14.1.1",
+    "markdown-it-task-lists": "^2.1.1"
   }
 }

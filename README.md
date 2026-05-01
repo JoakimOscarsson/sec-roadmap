@@ -25,3 +25,9 @@ Run JavaScript syntax checks:
 ```sh
 npm run check:js
 ```
+
+Run the editor smoke test, which also creates a static build:
+
+```sh
+npm run test:smoke
+```

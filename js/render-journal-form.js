@@ -63,10 +63,18 @@ function renderJournalForm() {
     event.preventDefault();
     saveJournalForm(entry, controls);
   });
+  form.addEventListener("keydown", handleJournalEditorKeydown);
   overlay.append(form);
 
   setTimeout(() => body.focus(), 0);
   return overlay;
+}
+
+function handleJournalEditorKeydown(event) {
+  if (event.key !== "Escape") return;
+  event.preventDefault();
+  event.stopPropagation();
+  closeJournalEditor();
 }
 
 function renderJournalFormActions(entry, controls) {

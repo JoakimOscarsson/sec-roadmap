@@ -1,6 +1,9 @@
 const JOURNAL_COMMANDS = [
+  { id: "title", aliases: ["t"], label: "/title", detail: "Set note title" },
+  { id: "subtitle", aliases: ["st", "substitle"], label: "/subtitle", detail: "Set note subtitle" },
   { id: "tag", label: "/tag", detail: "Add the next word as a tag" },
-  { id: "link", label: "/link", detail: "Link a roadmap item" }
+  { id: "link", label: "/link", detail: "Link a roadmap item" },
+  { id: "plan", label: "/plan", detail: "Link an item from your current plan" }
 ];
 
 function createJournalEditorControls(entry, title, subtitle, body) {
@@ -139,9 +142,10 @@ function journalCommandOptions(range) {
   if (command) {
     const query = command[1].toLowerCase();
     const options = JOURNAL_COMMANDS
-      .filter((item) => item.id.startsWith(query))
+      .filter((item) => journalCommandMatches(item, query))
+      .sort((left, right) => journalCommandScore(right, query) - journalCommandScore(left, query))
       .map((item) => ({ type: "command", ...item }));
-    if (query && !JOURNAL_COMMANDS.some((item) => item.id === query)) {
+    if (query && !options.length && !isReservedJournalCommand(query)) {
       options.push({ type: "tag", label: `Tag "${query}"`, detail: "Add tag", tag: query });
     }
     return options;
@@ -150,12 +154,36 @@ function journalCommandOptions(range) {
   const link = text.match(/^\/link(?:\s+(.*))?$/i);
   if (link) return journalLinkCommandOptions(link[1] || "");
 
+  const plan = text.match(/^\/plan(?:\s+(.*))?$/i);
+  if (plan) return journalPlanCommandOptions(plan[1] || "");
+
   return [];
 }
 
+function journalCommandMatches(command, query) {
+  if (!query) return true;
+  return command.id.startsWith(query) || (command.aliases || []).some((alias) => alias.startsWith(query));
+}
+
+function journalCommandScore(command, query) {
+  if (!query) return 0;
+  if ((command.aliases || []).includes(query)) return 3;
+  if (command.id === query) return 2;
+  if (command.id.startsWith(query)) return 1;
+  return 0;
+}
+
 function journalLinkCommandOptions(query) {
+  return journalTargetCommandOptions(getJournalLinkTargets(), query);
+}
+
+function journalPlanCommandOptions(query) {
+  return journalTargetCommandOptions(getJournalPlanLinkTargets(), query);
+}
+
+function journalTargetCommandOptions(targets, query) {
   const normalizedQuery = query.trim().toLowerCase();
-  return getJournalLinkTargets()
+  return targets
     .filter((target) => journalLinkOptionSearchText(target).includes(normalizedQuery))
     .slice(0, 8)
     .map((target) => ({
@@ -164,6 +192,10 @@ function journalLinkCommandOptions(query) {
       label: trimText(plainText(target.itemText), 80),
       detail: journalTargetContext(target)
     }));
+}
+
+function getJournalPlanLinkTargets() {
+  return getJournalLinkTargets().filter((target) => state.favorites?.[target.key]);
 }
 
 function journalLinkOptionSearchText(target) {
@@ -245,7 +277,7 @@ function completedJournalTagCommand(body) {
     /(^|\s)\/tag\s+"([^"]+)"$/i,
     /(^|\s)\/"([^"]+)"$/,
     /(^|\s)\/tag\s+([^\s"]+)\s$/i,
-    /(^|\s)\/(?!tag\s$|tag$|link\s$|link$)([^\s"/][^\s]*)\s$/i
+    /(^|\s)\/([^\s"/][^\s]*)\s$/i
   ];
 
   for (const pattern of patterns) {
@@ -253,6 +285,7 @@ function completedJournalTagCommand(body) {
     if (!match) continue;
     const value = match[2].trim();
     if (!value) continue;
+    if (pattern === patterns[3] && isReservedJournalCommand(value)) continue;
     return {
       value,
       start: match.index + match[1].length,
@@ -260,6 +293,51 @@ function completedJournalTagCommand(body) {
     };
   }
   return null;
+}
+
+function applyJournalLineCommandOnEnter(event, form, controls, options = {}) {
+  if (controls.body.selectionStart !== controls.body.selectionEnd) return false;
+
+  const range = getJournalCommandRange(controls.body);
+  if (!range) return false;
+
+  const title = range.text.match(/^\/(?:t|title)\s+(.+)$/i);
+  if (title) {
+    return applyJournalTextCommand(event, form, controls, range, "title", title[1], options);
+  }
+
+  const subtitle = range.text.match(/^\/(?:st|subtitle|substitle)\s+(.+)$/i);
+  if (subtitle) {
+    return applyJournalTextCommand(event, form, controls, range, "subtitle", subtitle[1], options);
+  }
+
+  return false;
+}
+
+function applyJournalTextCommand(event, form, controls, range, target, rawValue, options = {}) {
+  const value = unquoteJournalCommandValue(rawValue).trim();
+  if (!value) return false;
+
+  event.preventDefault();
+  if (target === "title") {
+    controls.title.value = value;
+  } else {
+    controls.subtitle.textContent = value;
+    controls.subtitle.hidden = false;
+  }
+
+  controls.commandRange = range;
+  removeJournalCommandText(controls);
+  closeJournalCommandMenu(controls);
+  form.dataset.commandActive = "false";
+  if (options.resize) resizeJournalInlineNote(controls.body);
+  return true;
+}
+
+function unquoteJournalCommandValue(value) {
+  const trimmed = String(value).trim();
+  const quoted = trimmed.match(/^"([^"]+)"$/);
+  return quoted ? quoted[1] : trimmed;
 }
 
 function replaceJournalCommandText(controls, value) {
@@ -290,6 +368,11 @@ function addJournalTag(controls, tag) {
 function addJournalLink(controls, key) {
   if (!key || controls.linkedItemKeys.includes(key)) return;
   controls.linkedItemKeys.push(key);
+}
+
+function isReservedJournalCommand(value) {
+  const normalized = String(value).toLowerCase();
+  return JOURNAL_COMMANDS.some((command) => command.id === normalized || (command.aliases || []).includes(normalized));
 }
 
 function closeJournalCommandMenu(controls) {

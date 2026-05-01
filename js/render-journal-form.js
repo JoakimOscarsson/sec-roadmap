@@ -42,13 +42,8 @@ function renderJournalForm() {
   body.className = "journal-note-input";
   body.value = entry?.body || "";
   body.addEventListener("input", () => applyJournalLiveInput(form, { title, subtitle, body }));
-  body.addEventListener("keydown", (event) => {
-    if (!isSaveShortcut(event)) return;
-    event.preventDefault();
-    saveJournalForm(entry, { title, subtitle, body });
-  });
-
   const controls = { title, subtitle, body };
+  body.addEventListener("keydown", (event) => handleJournalBodyKeydown(event, form, entry, controls));
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
       event.preventDefault();
@@ -106,13 +101,8 @@ function renderJournalInlineEditor(entry, cardClass) {
   body.className = "journal-note-input journal-inline-note";
   body.value = entry?.body || "";
   body.addEventListener("input", () => handleJournalInlineBodyInput(form, { title, subtitle, body }));
-  body.addEventListener("keydown", (event) => {
-    if (!isSaveShortcut(event)) return;
-    event.preventDefault();
-    saveJournalForm(entry, { title, subtitle, body });
-  });
-
   const controls = { title, subtitle, body };
+  body.addEventListener("keydown", (event) => handleJournalBodyKeydown(event, form, entry, controls, { resize: true }));
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
       event.preventDefault();
@@ -196,7 +186,6 @@ function saveJournalForm(entry, controls) {
 }
 
 function applyJournalLiveInput(form, controls) {
-  applyJournalHeadingShortcuts(controls);
   form.dataset.commandActive = String(controls.body.value.includes("/"));
 }
 
@@ -205,24 +194,61 @@ function handleJournalInlineBodyInput(form, controls) {
   resizeJournalInlineNote(controls.body);
 }
 
-function applyJournalHeadingShortcuts(controls) {
-  while (true) {
-    const match = controls.body.value.match(/^(#{2}|#)\s*([^\r\n]+)\r?\n/);
-    if (!match) break;
+function handleJournalBodyKeydown(event, form, entry, controls, options = {}) {
+  if (isSaveShortcut(event)) {
+    event.preventDefault();
+    saveJournalForm(entry, controls);
+    return;
+  }
 
-    const heading = match[2].trim();
-    if (heading && match[1] === "#") {
-      controls.title.value = heading;
-    } else if (heading && match[1] === "##") {
-      controls.subtitle.textContent = heading;
-      controls.subtitle.hidden = false;
-    }
-    controls.body.value = controls.body.value.slice(match[0].length);
+  if (event.key !== "Enter") return;
+  if (applyJournalHeadingShortcutOnEnter(event, controls)) {
+    applyJournalLiveInput(form, controls);
+    if (options.resize) resizeJournalInlineNote(controls.body);
   }
 }
 
 function isSaveShortcut(event) {
   return event.key === "Enter" && (event.ctrlKey || event.metaKey);
+}
+
+function applyJournalHeadingShortcutOnEnter(event, controls) {
+  const body = controls.body;
+  if (body.selectionStart !== body.selectionEnd) return false;
+
+  const value = body.value;
+  const lineEnd = firstLineEnd(value);
+  if (body.selectionStart !== lineEnd) return false;
+
+  const match = value.slice(0, body.selectionStart).match(/^(#{2}|#)\s+(.+)$/);
+  if (!match) return false;
+
+  const heading = match[2].trim();
+  if (!heading) return false;
+
+  event.preventDefault();
+  if (match[1] === "#") {
+    controls.title.value = heading;
+  } else {
+    controls.subtitle.textContent = heading;
+    controls.subtitle.hidden = false;
+  }
+
+  const restStart = nextLineStart(value, lineEnd);
+  body.value = value.slice(restStart);
+  if (typeof body.setSelectionRange === "function") body.setSelectionRange(0, 0);
+  return true;
+}
+
+function firstLineEnd(value) {
+  const newline = value.search(/\r?\n/);
+  return newline === -1 ? value.length : newline;
+}
+
+function nextLineStart(value, lineEnd) {
+  if (value.slice(lineEnd, lineEnd + 2) === "\r\n") return lineEnd + 2;
+  if (value[lineEnd] === "\n" || value[lineEnd] === "\r") return lineEnd + 1;
+  return lineEnd;
 }
 
 function resizeJournalInlineNote(body) {

@@ -6,10 +6,18 @@ function renderJournal() {
   header.append(element("p", "path-note", `${entries.length} entries shown.`));
   dom.main.append(header, renderJournalToolbar());
 
+  const createItem = renderJournalCreateItem();
+  if (createItem) {
+    const createList = element("div", "journal-list journal-create-list");
+    createList.append(createItem);
+    dom.main.append(createList);
+  }
+
   const form = renderJournalForm();
   if (form) dom.main.append(form);
 
   if (!entries.length) {
+    if (creatingJournalEntry) return;
     dom.main.append(element("p", "empty", state.query.trim() ? "No journal entries match the current search." : "No journal entries yet."));
     return;
   }

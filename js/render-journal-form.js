@@ -16,7 +16,7 @@ function closeJournalEditor() {
 
 function renderJournalForm() {
   const entry = editingJournalId ? state.journal.find((item) => item.id === editingJournalId) : null;
-  if (!entry && !creatingJournalEntry) return null;
+  if (!entry) return null;
 
   const overlay = element("div", "journal-overlay");
   const form = element("form", "journal-editor");
@@ -68,6 +68,66 @@ function renderJournalForm() {
 
   setTimeout(() => body.focus(), 0);
   return overlay;
+}
+
+function renderJournalCreateItem() {
+  if (!creatingJournalEntry) return null;
+
+  const card = element("article", "journal-card journal-create-card expanded");
+  const form = element("form", "journal-inline-editor");
+  const title = document.createElement("input");
+  title.name = "title";
+  title.required = true;
+  title.placeholder = "Entry title";
+  title.className = "journal-title-input journal-inline-title";
+  title.value = "Notes";
+
+  const subtitle = element("div", "journal-editor-subtitle", "");
+  subtitle.hidden = true;
+  const date = element("div", "journal-inline-date", formatDate(todayDate()));
+
+  const body = document.createElement("textarea");
+  body.name = "body";
+  body.placeholder = "Notes";
+  body.className = "journal-note-input journal-inline-note";
+  body.value = "";
+  body.addEventListener("input", () => applyJournalLiveInput(form, { title, subtitle, body }));
+  body.addEventListener("keydown", (event) => {
+    if (!isSaveShortcut(event)) return;
+    event.preventDefault();
+    saveJournalForm(null, { title, subtitle, body });
+  });
+
+  const controls = { title, subtitle, body };
+  title.addEventListener("keydown", (event) => {
+    if (isSaveShortcut(event)) {
+      event.preventDefault();
+      saveJournalForm(null, controls);
+      return;
+    }
+    if (event.key === "Enter") {
+      event.preventDefault();
+      body.focus();
+    }
+  });
+
+  const content = element("div", "journal-inline-content");
+  content.append(title, subtitle);
+  const side = element("div", "journal-row-side journal-inline-side");
+  side.append(date, renderJournalFormActions(null, controls));
+
+  const row = element("div", "journal-row journal-inline-row");
+  row.append(content, side);
+  form.append(row, body);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveJournalForm(null, controls);
+  });
+  form.addEventListener("keydown", handleJournalEditorKeydown);
+  card.append(form);
+
+  setTimeout(() => body.focus(), 0);
+  return card;
 }
 
 function handleJournalEditorKeydown(event) {

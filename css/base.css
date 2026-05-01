@@ -84,6 +84,8 @@ textarea:focus-visible,
 .favorite-btn:focus-visible,
 .custom-add:focus-visible,
 .icon-btn:focus-visible,
+.journal-add:focus-visible,
+.journal-icon-btn:focus-visible,
 .date-chip:focus-visible,
 .date-update:focus-visible {
   outline: 2px solid var(--accent-soft);

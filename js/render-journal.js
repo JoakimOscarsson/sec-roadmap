@@ -37,11 +37,11 @@ function renderJournalToolbar() {
   add.type = "button";
   add.title = "Add journal entry";
   add.setAttribute("aria-label", "Add journal entry");
-  add.addEventListener("click", () => {
-    editingJournalId = "";
-    creatingJournalEntry = true;
-    render();
-    dom.main.scrollIntoView({ block: "start" });
+  add.addEventListener("click", openJournalCreate);
+  add.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    openJournalCreate();
   });
   toolbar.append(add);
   return toolbar;

@@ -164,20 +164,24 @@
   border: 1px solid var(--line-soft);
   border-radius: 5px;
   overflow: hidden;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.journal-card:hover {
+  background: rgba(60, 50, 30, 0.028);
+  border-color: var(--line);
 }
 
 .journal-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: stretch;
 }
 
 .journal-row-toggle {
   appearance: none;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
-  gap: 16px;
   min-width: 0;
   border: 0;
   background: transparent;
@@ -189,7 +193,7 @@
 
 .journal-row-toggle:hover,
 .journal-row-toggle:focus-visible {
-  background: rgba(60, 50, 30, 0.035);
+  background: rgba(60, 50, 30, 0.024);
 }
 
 .journal-row-content {
@@ -212,17 +216,32 @@
   white-space: nowrap;
 }
 
+.journal-row-side {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 4px;
+  padding: 8px 10px 8px 8px;
+  min-width: 118px;
+}
+
 .journal-row-date {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.journal-date-chip {
+  background: transparent;
   color: var(--muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
 .journal-row-actions {
   display: flex;
   gap: 2px;
-  padding: 0 10px 0 8px;
+}
+
+.journal-date-editor input {
+  width: 118px;
 }
 
 .journal-expand {
@@ -295,8 +314,16 @@
   }
 
   .journal-row-toggle {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
+    padding-right: 8px;
+  }
+
+  .journal-row-side {
+    min-width: 104px;
+    padding-left: 4px;
+  }
+
+  .journal-date-editor input {
+    width: 104px;
   }
 }
 

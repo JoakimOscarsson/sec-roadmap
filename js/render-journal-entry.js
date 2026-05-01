@@ -23,8 +23,11 @@ function renderJournalRow(entry, expanded) {
   content.append(title);
   if (subtitle) content.append(subtitle);
 
-  toggle.append(content, element("div", "journal-row-date", formatDate(entry.date)));
-  row.append(toggle, renderJournalActions(entry));
+  toggle.append(content);
+
+  const side = element("div", "journal-row-side");
+  side.append(renderJournalDate(entry), renderJournalActions(entry));
+  row.append(toggle, side);
   return row;
 }
 
@@ -60,6 +63,53 @@ function renderJournalLinks(entry) {
     wrapper.append(button);
   });
   return wrapper;
+}
+
+function renderJournalDate(entry) {
+  const wrapper = element("div", "journal-row-date");
+  const chip = element("button", "date-chip journal-date-chip", formatDate(entry.date));
+  chip.type = "button";
+  chip.title = "Edit journal date";
+  chip.setAttribute("aria-label", `Edit date for ${entry.title}`);
+  chip.addEventListener("click", () => {
+    wrapper.replaceChildren(renderJournalDateEditor(entry));
+  });
+  wrapper.append(chip);
+  return wrapper;
+}
+
+function renderJournalDateEditor(entry) {
+  const editor = element("div", "date-editor journal-date-editor");
+  const input = document.createElement("input");
+  input.type = "date";
+  input.value = entry.date || todayDate();
+  input.setAttribute("aria-label", `Date for ${entry.title}`);
+
+  const save = () => {
+    if (isValidDate(input.value)) updateJournalEntry(entry.id, { date: input.value });
+    render();
+  };
+
+  input.addEventListener("change", save);
+  input.addEventListener("blur", save);
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      save();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      render();
+    }
+  });
+
+  setTimeout(() => {
+    input.focus();
+    if (typeof input.showPicker === "function") input.showPicker();
+  }, 0);
+
+  editor.append(input);
+  return editor;
 }
 
 function renderJournalActions(entry) {

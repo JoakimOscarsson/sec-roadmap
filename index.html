@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Security Roadmap</title>
+  <link rel="stylesheet" href="styles.css?v=indexeddb-state">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">Security Roadmap</div>
+      <div class="brand-sub">Structured study tracker</div>
+
+      <div class="side-section">
+        <div class="side-section-title">Curriculum</div>
+        <div class="switcher" id="tabSwitcher" aria-label="Roadmap curriculum">
+          <button type="button" data-tab="core">Core</button>
+          <button type="button" data-tab="specializations">Specializations</button>
+          <button type="button" data-tab="custom">Custom</button>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <div class="side-section-title">Study</div>
+        <div class="side-actions" aria-label="Study screens">
+          <button class="ghost-btn" type="button" data-tab="favorites">Plan</button>
+          <button class="ghost-btn" id="reviewBtn" type="button">Review</button>
+          <button class="ghost-btn" id="portfolioBtn" type="button">Portfolio</button>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <div class="side-section-title">Filters</div>
+        <label class="side-label" for="searchInput">Search</label>
+        <input id="searchInput" type="search" autocomplete="off" placeholder="NIS2, AI, firmware, TARA">
+
+        <label class="side-label" for="levelFilter">Level</label>
+        <select id="levelFilter">
+          <option value="all">All levels</option>
+          <option value="0">Blank</option>
+          <option value="1">Level 1</option>
+          <option value="2">Level 2</option>
+          <option value="3">Level 3</option>
+        </select>
+      </div>
+
+      <div class="side-section">
+        <div class="side-section-title">Progress</div>
+        <div class="progress-overall">
+          <div class="label"><span id="progressScope">Visible</span><span id="overallPct">0%</span></div>
+          <div class="bar"><span id="overallBar"></span></div>
+        </div>
+      </div>
+
+      <div class="side-section contents-section">
+        <div class="nav-title">Contents</div>
+        <ul class="nav" id="nav"></ul>
+      </div>
+
+      <div class="side-section">
+        <div class="side-section-title">Resources</div>
+        <div class="side-actions" aria-label="Resource screens">
+          <button class="ghost-btn" id="guideBtn" type="button">Guide</button>
+          <button class="ghost-btn" id="referenceBtn" type="button">Reference</button>
+          <button class="ghost-btn" id="sourcesBtn" type="button">Sources</button>
+        </div>
+      </div>
+
+      <div class="side-section">
+        <div class="side-section-title">Settings</div>
+        <div class="side-actions">
+          <button class="ghost-btn" id="resetBtn" type="button">Reset</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main" id="main"></main>
+  </div>
+
+  <script src="content.js?v=indexeddb-state"></script>
+  <script src="js/config.js?v=indexeddb-state"></script>
+  <script src="js/storage.js?v=indexeddb-state"></script>
+  <script src="js/dom-utils.js?v=indexeddb-state"></script>
+  <script src="js/markdown-parser.js?v=indexeddb-state"></script>
+  <script src="js/state.js?v=indexeddb-state"></script>
+  <script src="js/roadmap-model.js?v=indexeddb-state"></script>
+  <script src="js/tracking.js?v=indexeddb-state"></script>
+  <script src="js/progress.js?v=indexeddb-state"></script>
+  <script src="js/custom-data.js?v=indexeddb-state"></script>
+  <script src="js/collections.js?v=indexeddb-state"></script>
+  <script src="js/actions.js?v=indexeddb-state"></script>
+  <script src="js/controls.js?v=indexeddb-state"></script>
+  <script src="js/render-controls.js?v=indexeddb-state"></script>
+  <script src="js/render-nav.js?v=indexeddb-state"></script>
+  <script src="js/render-content.js?v=indexeddb-state"></script>
+  <script src="js/render-overviews.js?v=indexeddb-state"></script>
+  <script src="js/render-chapter.js?v=indexeddb-state"></script>
+  <script src="js/render-plan-portfolio.js?v=indexeddb-state"></script>
+  <script src="js/render-support.js?v=indexeddb-state"></script>
+  <script src="js/render-custom.js?v=indexeddb-state"></script>
+  <script src="js/render-review.js?v=indexeddb-state"></script>
+  <script src="js/render-app.js?v=indexeddb-state"></script>
+  <script src="app.js?v=indexeddb-state"></script>
+</body>
+</html>

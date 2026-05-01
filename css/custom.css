@@ -1,0 +1,105 @@
+.custom-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 34px;
+  gap: 8px;
+  margin: 0 0 22px;
+}
+
+.custom-form input {
+  width: 100%;
+  border: 1px solid var(--line-soft);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 34px;
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.custom-add {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-2);
+  min-height: 34px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.custom-add:hover {
+  color: var(--text);
+  border-color: var(--accent-soft);
+}
+
+.custom-groups {
+  display: grid;
+  gap: 26px;
+  margin-top: 20px;
+}
+
+.custom-group {
+  scroll-margin-top: 24px;
+}
+
+.custom-group-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dashed var(--line-soft);
+  margin-bottom: 10px;
+}
+
+.custom-group-heading h3 {
+  margin: 0;
+}
+
+.custom-list {
+  display: grid;
+  gap: 8px;
+}
+
+.custom-card {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 10px 0;
+}
+
+.custom-row {
+  display: grid;
+  grid-template-columns: 22px 22px minmax(0, 1fr) max-content max-content;
+  gap: 10px;
+  align-items: start;
+}
+
+.custom-content {
+  min-width: 0;
+}
+
+.custom-content > div:first-child {
+  overflow-wrap: anywhere;
+}
+
+.custom-context {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.custom-card.done .custom-content > div:first-child {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--line);
+}
+
+.custom-card.done .custom-content a {
+  color: var(--muted);
+}
+
+.custom-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 1px;
+}

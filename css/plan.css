@@ -1,0 +1,51 @@
+.favorites-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.favorite-card {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  padding: 14px 16px;
+}
+
+.favorite-context {
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.favorite-row {
+  display: grid;
+  grid-template-columns: 22px 22px minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: start;
+}
+
+.portfolio-plan-row {
+  grid-template-columns: 22px 22px minmax(0, 1fr);
+}
+
+.favorite-row > div {
+  overflow-wrap: anywhere;
+}
+
+.portfolio-plan-row input {
+  margin-top: 4px;
+}
+
+.favorite-card.done .favorite-row > div {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--line);
+}
+
+.favorite-card.done .favorite-row a {
+  color: var(--muted);
+}
+
+.favorite-actions {
+  margin: 10px 0 0 64px;
+}

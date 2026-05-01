@@ -1,0 +1,125 @@
+.review-buckets {
+  display: grid;
+  gap: 28px;
+  margin-top: 20px;
+}
+
+.review-bucket {
+  scroll-margin-top: 24px;
+}
+
+.review-bucket-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px dashed var(--line-soft);
+  margin-bottom: 10px;
+}
+
+.review-bucket-heading h3 {
+  margin-top: 0;
+}
+
+.review-list {
+  display: grid;
+  gap: 8px;
+}
+
+.review-card {
+  border-bottom: 1px solid var(--line-soft);
+  padding: 10px 0;
+}
+
+.review-row {
+  display: grid;
+  grid-template-columns: 22px 22px 22px minmax(0, 1fr) max-content;
+  gap: 10px;
+  align-items: start;
+}
+
+.review-complete-control {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  margin: 4px 0 0;
+  cursor: pointer;
+}
+
+.review-complete-control input {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  border: 1.5px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg);
+  cursor: pointer;
+  position: relative;
+  transition: border-color 120ms, background 120ms, box-shadow 120ms;
+}
+
+.review-complete-control input:hover {
+  border-color: var(--accent-soft);
+  box-shadow: 0 0 0 2px rgba(138, 118, 84, 0.12);
+}
+
+.review-complete-control input:checked {
+  background: var(--check);
+  border-color: var(--check);
+}
+
+.review-complete-control input:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 4px;
+  height: 9px;
+  border: solid var(--bg);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.review-card.review-complete .review-content > div:first-child {
+  color: var(--muted);
+}
+
+.review-content {
+  min-width: 0;
+}
+
+.review-content > div:first-child {
+  overflow-wrap: anywhere;
+}
+
+.review-context {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.review-open {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.review-open:hover {
+  color: var(--accent);
+  background: rgba(0, 0, 0, 0.035);
+}

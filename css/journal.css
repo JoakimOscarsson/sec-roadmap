@@ -156,36 +156,99 @@
 
 .journal-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .journal-card {
-  background: var(--panel);
+  background: transparent;
   border: 1px solid var(--line-soft);
-  border-radius: 6px;
-  padding: 14px 16px;
+  border-radius: 5px;
+  overflow: hidden;
 }
 
-.journal-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  color: var(--muted);
-  font-size: 12px;
-  margin-bottom: 6px;
+.journal-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
 }
 
-.journal-card h3 {
-  margin: 0 0 8px;
+.journal-row-toggle {
+  appearance: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 10px 0 10px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.journal-row-toggle:hover,
+.journal-row-toggle:focus-visible {
+  background: rgba(60, 50, 30, 0.035);
+}
+
+.journal-row-content {
+  min-width: 0;
+}
+
+.journal-card-title {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .journal-card-subtitle {
   color: var(--text-2);
   font-size: 13.5px;
-  margin: -4px 0 8px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-row-date {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.journal-row-actions {
+  display: flex;
+  gap: 2px;
+  padding: 0 10px 0 8px;
+}
+
+.journal-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 180ms ease, opacity 150ms ease;
+}
+
+.journal-card.expanded .journal-expand {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.journal-expand-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.journal-expand-content {
+  border-top: 1px solid var(--line-soft);
+  padding: 12px;
 }
 
 .journal-body {
+  margin: 0;
   white-space: pre-wrap;
 }
 
@@ -213,13 +276,6 @@
   color: var(--text);
 }
 
-.journal-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
 .journal-nav-dot {
   width: 7px;
   height: 7px;
@@ -236,5 +292,16 @@
 
   .journal-editor {
     padding: 32px 24px 24px;
+  }
+
+  .journal-row-toggle {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journal-expand {
+    transition: none;
   }
 }

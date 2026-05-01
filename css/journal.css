@@ -45,7 +45,7 @@
 
 .journal-editor-header {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .journal-title-input {
@@ -69,9 +69,14 @@
   outline: 0;
 }
 
-.journal-editor-date {
+.journal-editor-subtitle {
   color: var(--text-2);
   font-size: 13.5px;
+}
+
+.journal-editor-date {
+  color: #a29884;
+  font-size: 12.5px;
 }
 
 .journal-note-input {
@@ -172,6 +177,12 @@
 
 .journal-card h3 {
   margin: 0 0 8px;
+}
+
+.journal-card-subtitle {
+  color: var(--text-2);
+  font-size: 13.5px;
+  margin: -4px 0 8px;
 }
 
 .journal-body {

@@ -27,6 +27,8 @@ function renderJournalForm() {
   title.className = "journal-title-input";
   title.value = entry?.title || "Notes";
 
+  const subtitle = element("div", "journal-editor-subtitle", entry?.subtitle || "");
+  subtitle.hidden = !subtitle.textContent;
   const date = element("div", "journal-editor-date", formatDate(entry?.date || todayDate()));
 
   const body = document.createElement("textarea");
@@ -34,14 +36,14 @@ function renderJournalForm() {
   body.placeholder = "Notes";
   body.className = "journal-note-input";
   body.value = entry?.body || "";
-  body.addEventListener("input", () => applyJournalLiveInput(form, { title, body }));
+  body.addEventListener("input", () => applyJournalLiveInput(form, { title, subtitle, body }));
   body.addEventListener("keydown", (event) => {
     if (!isSaveShortcut(event)) return;
     event.preventDefault();
-    saveJournalForm(entry, { title, body });
+    saveJournalForm(entry, { title, subtitle, body });
   });
 
-  const controls = { title, body };
+  const controls = { title, subtitle, body };
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
       event.preventDefault();
@@ -55,7 +57,7 @@ function renderJournalForm() {
   });
 
   const header = element("div", "journal-editor-header");
-  header.append(title, date);
+  header.append(title, subtitle, date);
   form.append(header, body, renderJournalFormActions(entry, controls));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -87,6 +89,7 @@ function renderJournalFormActions(entry, controls) {
 function saveJournalForm(entry, controls) {
   const data = {
     title: controls.title.value.trim() || "Notes",
+    subtitle: controls.subtitle.textContent.trim(),
     date: entry?.date || todayDate(),
     type: entry?.type || JOURNAL_TYPES[0],
     linkedItemKeys: entry?.linkedItemKeys || [],
@@ -105,17 +108,24 @@ function saveJournalForm(entry, controls) {
 }
 
 function applyJournalLiveInput(form, controls) {
-  applyJournalHeadingShortcut(controls);
+  applyJournalHeadingShortcuts(controls);
   form.dataset.commandActive = String(controls.body.value.includes("/"));
 }
 
-function applyJournalHeadingShortcut(controls) {
-  const match = controls.body.value.match(/^#\s*([^\r\n]+)\r?\n/);
-  if (!match) return;
+function applyJournalHeadingShortcuts(controls) {
+  while (true) {
+    const match = controls.body.value.match(/^(#{2}|#)\s*([^\r\n]+)\r?\n/);
+    if (!match) break;
 
-  const heading = match[1].trim();
-  if (heading) controls.title.value = heading;
-  controls.body.value = controls.body.value.slice(match[0].length);
+    const heading = match[2].trim();
+    if (heading && match[1] === "#") {
+      controls.title.value = heading;
+    } else if (heading && match[1] === "##") {
+      controls.subtitle.textContent = heading;
+      controls.subtitle.hidden = false;
+    }
+    controls.body.value = controls.body.value.slice(match[0].length);
+  }
 }
 
 function isSaveShortcut(event) {

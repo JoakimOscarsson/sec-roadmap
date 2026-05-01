@@ -25,6 +25,7 @@ function normalizeJournalEntry(entry) {
   return {
     id: entry.id,
     title,
+    subtitle: typeof entry.subtitle === "string" ? entry.subtitle.trim() : "",
     body: typeof entry.body === "string" ? entry.body : "",
     date,
     type,
@@ -88,6 +89,7 @@ function compareJournalEntries(left, right) {
 function journalEntrySearchText(entry) {
   return [
     entry.title,
+    entry.subtitle,
     entry.body,
     entry.type,
     entry.date,

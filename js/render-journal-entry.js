@@ -8,10 +8,13 @@ function renderJournalEntry(entry) {
   meta.append(element("span", "", formatDate(entry.date)));
 
   const title = element("h3", "", entry.title);
+  const subtitle = entry.subtitle ? element("div", "journal-card-subtitle", entry.subtitle) : null;
   const text = element("p", "journal-body", body || "No notes.");
   const links = renderJournalLinks(entry);
   const actions = renderJournalActions(entry, expanded);
-  card.append(meta, title, text);
+  card.append(meta, title);
+  if (subtitle) card.append(subtitle);
+  card.append(text);
   if (links) card.append(links);
   card.append(actions);
   return card;

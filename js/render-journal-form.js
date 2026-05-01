@@ -13,6 +13,7 @@ function openJournalCreate() {
 }
 
 function closeJournalEditor() {
+  destroyAllJournalEditors();
   editingJournalId = "";
   inlineEditingJournalId = "";
   creatingJournalEntry = false;
@@ -36,16 +37,20 @@ function renderJournalForm() {
   subtitle.hidden = !subtitle.textContent;
   const date = element("div", "journal-editor-date", formatDate(entry?.date || todayDate()));
 
-  const body = document.createElement("textarea");
-  body.name = "body";
-  body.placeholder = "Notes";
-  body.className = "journal-note-input";
-  body.value = entry?.body || "";
   const bodyHost = element("div", "journal-command-host journal-focused-note-wrap");
-  const controls = createJournalEditorControls(entry, title, subtitle, body);
+  const controls = createJournalEditorControls(entry, title, subtitle, null);
   controls.commandHost = bodyHost;
-  body.addEventListener("input", () => applyJournalLiveInput(form, controls));
-  body.addEventListener("keydown", (event) => handleJournalBodyKeydown(event, form, entry, controls));
+  controls.editor = mountJournalEditor({
+    element: bodyHost,
+    markdown: entry?.body || "",
+    className: "journal-note-input",
+    placeholder: "Notes",
+    mode: "focused",
+    metadata: controls,
+    onChange: () => applyJournalLiveInput(form, controls),
+    onKeydown: (event) => handleJournalBodyKeydown(event, form, entry, controls)
+  });
+  controls.body = controls.editor.body;
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
       event.preventDefault();
@@ -54,13 +59,12 @@ function renderJournalForm() {
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      body.focus();
+      focusJournalEditor(controls.editor);
     }
   });
 
   const header = element("div", "journal-editor-header");
   header.append(title, subtitle, renderJournalEditorMeta(controls), date);
-  bodyHost.append(body);
   form.append(header, bodyHost, renderJournalFormActions(entry, controls));
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -69,7 +73,7 @@ function renderJournalForm() {
   form.addEventListener("keydown", handleJournalEditorKeydown);
   overlay.append(form);
 
-  setTimeout(() => body.focus(), 0);
+  setTimeout(() => focusJournalEditor(controls.editor), 0);
   return overlay;
 }
 
@@ -98,14 +102,7 @@ function renderJournalInlineEditor(entry, cardClass) {
   subtitle.hidden = !subtitle.textContent;
   const date = element("div", "journal-inline-date", formatDate(entry?.date || todayDate()));
 
-  const body = document.createElement("textarea");
-  body.name = "body";
-  body.placeholder = "Notes";
-  body.className = "journal-note-input journal-inline-note";
-  body.value = entry?.body || "";
-  const controls = createJournalEditorControls(entry, title, subtitle, body);
-  body.addEventListener("input", () => handleJournalInlineBodyInput(form, controls));
-  body.addEventListener("keydown", (event) => handleJournalBodyKeydown(event, form, entry, controls, { resize: true }));
+  const controls = createJournalEditorControls(entry, title, subtitle, null);
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
       event.preventDefault();
@@ -114,7 +111,7 @@ function renderJournalInlineEditor(entry, cardClass) {
     }
     if (event.key === "Enter") {
       event.preventDefault();
-      body.focus();
+      focusJournalEditor(controls.editor);
     }
   });
 
@@ -127,7 +124,18 @@ function renderJournalInlineEditor(entry, cardClass) {
   row.append(content, side);
   const noteWrap = element("div", "journal-inline-note-wrap");
   controls.commandHost = noteWrap;
-  noteWrap.append(body, renderJournalFormActions(entry, controls));
+  controls.editor = mountJournalEditor({
+    element: noteWrap,
+    markdown: entry?.body || "",
+    className: "journal-note-input journal-inline-note",
+    placeholder: "Notes",
+    mode: "inline",
+    metadata: controls,
+    onChange: () => handleJournalInlineBodyInput(form, controls),
+    onKeydown: (event) => handleJournalBodyKeydown(event, form, entry, controls, { resize: true })
+  });
+  controls.body = controls.editor.body;
+  noteWrap.append(renderJournalFormActions(entry, controls));
   form.append(row, noteWrap);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -137,8 +145,8 @@ function renderJournalInlineEditor(entry, cardClass) {
   card.append(form);
 
   setTimeout(() => {
-    body.focus();
-    resizeJournalInlineNote(body);
+    focusJournalEditor(controls.editor);
+    resizeJournalEditor(controls.editor);
   }, 0);
   return card;
 }
@@ -175,7 +183,7 @@ function saveJournalForm(entry, controls) {
     type: entry?.type || JOURNAL_TYPES[0],
     linkedItemKeys: uniqueJournalLinks(controls.linkedItemKeys || []),
     tags: uniqueJournalTags(controls.tags || []),
-    body: unescapeJournalBody(controls.body.value)
+    body: unescapeJournalBody(getJournalEditorMarkdown(controls.editor))
   };
 
   if (entry) {

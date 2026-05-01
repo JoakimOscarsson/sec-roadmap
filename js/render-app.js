@@ -1,4 +1,6 @@
 function render() {
+  destroyAllJournalEditors();
+
   if ((state.tab === "favorites" || state.tab === "custom") && (state.view === "chapter" || state.view === "track")) {
     state.view = "overview";
   }

@@ -1,0 +1,13 @@
+{
+  "name": "sec-roadmap",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build",
+    "check:js": "for f in app.js js/*.js; do node --check \"$f\" || exit 1; done"
+  },
+  "devDependencies": {
+    "vite": "^7.1.12"
+  }
+}

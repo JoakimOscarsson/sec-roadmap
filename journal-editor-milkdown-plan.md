@@ -28,19 +28,19 @@ Add a small build setup, likely Vite, while preserving the current static-app be
 
 Tasks:
 
-- [ ] Add package metadata and build scripts.
-- [ ] Add Vite or equivalent minimal bundling setup.
-- [ ] Move script loading from many global script tags toward bundled modules.
-- [ ] Keep the current app behavior unchanged during this step.
-- [ ] Document how to build and preview the app without changing the user's no-local-server testing preference.
+- [x] Add package metadata and build scripts.
+- [x] Add Vite or equivalent minimal bundling setup.
+- [x] Move script loading from many global script tags toward bundled modules.
+- [x] Keep the current app behavior unchanged during this step.
+- [x] Document how to build and preview the app without changing the user's no-local-server testing preference.
 
 Definition of done:
 
-- [ ] App builds successfully.
-- [ ] Built app runs as the same single-page web app.
-- [ ] Existing roadmap, tracking, plan, review, custom, portfolio, and journal views still work.
-- [ ] Existing IndexedDB state loads without migration.
-- [ ] No journal editor behavior changes yet.
+- [x] App builds successfully.
+- [x] Built app runs as the same single-page web app.
+- [x] Existing roadmap, tracking, plan, review, custom, portfolio, and journal views still work.
+- [x] Existing IndexedDB state loads without migration.
+- [x] No journal editor behavior changes yet.
 
 ## 2. Introduce A Journal Editor Adapter Layer
 
@@ -67,17 +67,17 @@ focusJournalEditor(instance)
 
 Tasks:
 
-- [ ] Create a dedicated journal editor adapter module.
-- [ ] Define lifecycle methods for mounting, reading, focusing, and destroying editors.
-- [ ] Make inline and focused modes capable of using the same adapter.
-- [ ] Keep a fallback path until Milkdown is fully integrated.
+- [x] Create a dedicated journal editor adapter module.
+- [x] Define lifecycle methods for mounting, reading, focusing, and destroying editors.
+- [x] Make inline and focused modes capable of using the same adapter.
+- [x] Keep a fallback path until Milkdown is fully integrated.
 
 Definition of done:
 
-- [ ] Journal form code calls the adapter instead of owning editor internals.
-- [ ] Editor instances are destroyed when closing, saving, switching entries, or rerendering.
-- [ ] Inline and focused editors use the same adapter interface.
-- [ ] Storage and list rendering remain unchanged.
+- [x] Journal form code calls the adapter instead of owning editor internals.
+- [x] Editor instances are destroyed when closing, saving, switching entries, or rerendering.
+- [x] Inline and focused editors use the same adapter interface.
+- [x] Storage and list rendering remain unchanged.
 
 ## 3. Install Milkdown With Markdown-First Storage
 

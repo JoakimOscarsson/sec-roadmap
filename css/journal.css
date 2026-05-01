@@ -1,16 +1,30 @@
+.journal-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.journal-header-meta .path-note {
+  margin: 0;
+}
+
 .journal-toolbar {
   display: flex;
   justify-content: flex-end;
-  margin: -6px 0 18px;
+  margin: 0;
 }
 
 .journal-add {
   appearance: none;
-  border: 1px solid var(--line);
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line-soft);
   background: transparent;
-  color: var(--text-2);
-  width: 28px;
-  height: 28px;
+  color: var(--muted);
+  width: 30px;
+  height: 30px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 18px;
@@ -182,7 +196,7 @@
   border: 0;
   background: transparent;
   color: inherit;
-  padding: 10px 136px 10px 12px;
+  padding: 10px 178px 10px 12px;
   cursor: pointer;
   text-align: left;
   width: 100%;
@@ -214,12 +228,12 @@
 }
 
 .journal-row-side {
-  display: grid;
-  justify-items: end;
-  align-content: center;
-  gap: 4px;
-  padding: 8px 10px 8px 8px;
-  min-width: 118px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 8px 8px 10px;
+  min-width: 166px;
   pointer-events: none;
   position: absolute;
   inset: 0 0 0 auto;
@@ -268,6 +282,7 @@
 .journal-inline-side {
   padding-top: 10px;
   padding-bottom: 10px;
+  min-width: auto;
 }
 
 .journal-inline-note-wrap {
@@ -298,12 +313,13 @@
 
 .journal-date-chip {
   background: transparent;
+  border-color: transparent;
   color: var(--muted);
 }
 
 .journal-row-actions {
   display: flex;
-  gap: 2px;
+  gap: 1px;
 }
 
 .journal-date-editor input {
@@ -390,11 +406,11 @@
   }
 
   .journal-row-toggle {
-    padding-right: 116px;
+    padding-right: 160px;
   }
 
   .journal-row-side {
-    min-width: 104px;
+    min-width: 150px;
     padding-left: 4px;
   }
 

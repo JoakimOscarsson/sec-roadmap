@@ -3,8 +3,10 @@ function renderJournal() {
 
   const entries = getJournalEntries();
   const header = renderHeader("Journal", "Capture study notes, reflections, questions, and practice logs.", "Study");
-  header.append(element("p", "path-note", `${entries.length} entries shown.`));
-  dom.main.append(header, renderJournalToolbar());
+  const meta = element("div", "journal-header-meta");
+  meta.append(element("p", "path-note", `${entries.length} entries shown.`), renderJournalToolbar());
+  header.append(meta);
+  dom.main.append(header);
 
   const form = renderJournalForm();
   if (form) dom.main.append(form);

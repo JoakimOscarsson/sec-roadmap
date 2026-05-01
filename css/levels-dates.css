@@ -35,7 +35,10 @@
 }
 
 .date-chip.today {
-  color: #7b5d35;
+  border-color: #bfa46f;
+  background: #e7dcc4;
+  color: #5f4a28;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
 }
 
 .date-chip:hover:not(:disabled) {

@@ -1,6 +1,8 @@
 let expandedJournalId = "";
 
 function renderJournalEntry(entry) {
+  if (inlineEditingJournalId === entry.id) return renderJournalInlineEditItem(entry);
+
   const card = element("article", "journal-card");
   const expanded = expandedJournalId === entry.id;
   card.dataset.journalId = entry.id;
@@ -57,12 +59,12 @@ function renderJournalEditableBody(entry) {
   body.title = "Click to edit";
   body.addEventListener("click", () => {
     if (typeof window !== "undefined" && typeof window.getSelection === "function" && window.getSelection().toString()) return;
-    openJournalEdit(entry.id);
+    openJournalInlineEdit(entry.id);
   });
   body.addEventListener("keydown", (event) => {
     if (event.key !== "Enter" && event.key !== " ") return;
     event.preventDefault();
-    openJournalEdit(entry.id);
+    openJournalInlineEdit(entry.id);
   });
   return body;
 }
@@ -132,6 +134,12 @@ function renderJournalDateEditor(entry) {
 
 function renderJournalActions(entry) {
   const actions = element("div", "journal-row-actions");
+  const edit = element("button", "icon-btn", "✎");
+  edit.type = "button";
+  edit.title = "Focused edit";
+  edit.setAttribute("aria-label", `Open focused editor for ${entry.title}`);
+  edit.addEventListener("click", () => openJournalFocusedEdit(entry.id));
+
   const remove = element("button", "icon-btn danger", "×");
   remove.type = "button";
   remove.title = "Delete journal entry";
@@ -140,12 +148,21 @@ function renderJournalActions(entry) {
     if (expandedJournalId === entry.id) expandedJournalId = "";
     deleteJournalEntry(entry.id);
   });
-  actions.append(remove);
+  actions.append(edit, remove);
   return actions;
 }
 
-function openJournalEdit(entryId) {
+function openJournalInlineEdit(entryId) {
+  inlineEditingJournalId = entryId;
+  editingJournalId = "";
+  creatingJournalEntry = false;
+  render();
+  findJournalCard(entryId)?.scrollIntoView({ block: "nearest" });
+}
+
+function openJournalFocusedEdit(entryId) {
   editingJournalId = entryId;
+  inlineEditingJournalId = "";
   creatingJournalEntry = false;
   render();
   dom.main.scrollIntoView({ block: "start" });

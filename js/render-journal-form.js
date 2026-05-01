@@ -1,8 +1,10 @@
 let editingJournalId = "";
+let inlineEditingJournalId = "";
 let creatingJournalEntry = false;
 
 function openJournalCreate() {
   editingJournalId = "";
+  inlineEditingJournalId = "";
   creatingJournalEntry = true;
   render();
   if (typeof document.querySelector === "function") {
@@ -12,6 +14,7 @@ function openJournalCreate() {
 
 function closeJournalEditor() {
   editingJournalId = "";
+  inlineEditingJournalId = "";
   creatingJournalEntry = false;
   render();
 }
@@ -75,36 +78,45 @@ function renderJournalForm() {
 function renderJournalCreateItem() {
   if (!creatingJournalEntry) return null;
 
-  const card = element("article", "journal-card journal-create-card expanded");
+  return renderJournalInlineEditor(null, "journal-create-card");
+}
+
+function renderJournalInlineEditItem(entry) {
+  return renderJournalInlineEditor(entry, "journal-inline-edit-card");
+}
+
+function renderJournalInlineEditor(entry, cardClass) {
+  const card = element("article", `journal-card ${cardClass} expanded`);
+  if (entry) card.dataset.journalId = entry.id;
   const form = element("form", "journal-inline-editor");
   const title = document.createElement("input");
   title.name = "title";
   title.required = true;
   title.placeholder = "Entry title";
   title.className = "journal-title-input journal-inline-title";
-  title.value = "Notes";
+  title.value = entry?.title || "Notes";
 
-  const subtitle = element("div", "journal-editor-subtitle", "");
-  subtitle.hidden = true;
-  const date = element("div", "journal-inline-date", formatDate(todayDate()));
+  const subtitle = element("div", "journal-editor-subtitle", entry?.subtitle || "");
+  subtitle.hidden = !subtitle.textContent;
+  const date = element("div", "journal-inline-date", formatDate(entry?.date || todayDate()));
 
   const body = document.createElement("textarea");
   body.name = "body";
   body.placeholder = "Notes";
   body.className = "journal-note-input journal-inline-note";
-  body.value = "";
+  body.value = entry?.body || "";
   body.addEventListener("input", () => handleJournalInlineBodyInput(form, { title, subtitle, body }));
   body.addEventListener("keydown", (event) => {
     if (!isSaveShortcut(event)) return;
     event.preventDefault();
-    saveJournalForm(null, { title, subtitle, body });
+    saveJournalForm(entry, { title, subtitle, body });
   });
 
   const controls = { title, subtitle, body };
   title.addEventListener("keydown", (event) => {
     if (isSaveShortcut(event)) {
       event.preventDefault();
-      saveJournalForm(null, controls);
+      saveJournalForm(entry, controls);
       return;
     }
     if (event.key === "Enter") {
@@ -121,11 +133,11 @@ function renderJournalCreateItem() {
   const row = element("div", "journal-row journal-inline-row");
   row.append(content, side);
   const noteWrap = element("div", "journal-inline-note-wrap");
-  noteWrap.append(body, renderJournalFormActions(null, controls));
+  noteWrap.append(body, renderJournalFormActions(entry, controls));
   form.append(row, noteWrap);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    saveJournalForm(null, controls);
+    saveJournalForm(entry, controls);
   });
   form.addEventListener("keydown", handleJournalEditorKeydown);
   card.append(form);
@@ -179,6 +191,7 @@ function saveJournalForm(entry, controls) {
     createJournalEntry(data);
     creatingJournalEntry = false;
   }
+  inlineEditingJournalId = "";
   render();
 }
 

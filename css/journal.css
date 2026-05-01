@@ -1,3 +1,27 @@
+.journal-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin: -6px 0 18px;
+}
+
+.journal-add {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-2);
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.journal-add:hover {
+  color: var(--text);
+  border-color: var(--accent-soft);
+}
+
 .journal-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

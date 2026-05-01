@@ -1,7 +1,10 @@
 let editingJournalId = "";
+let creatingJournalEntry = false;
 
 function renderJournalForm() {
   const entry = editingJournalId ? state.journal.find((item) => item.id === editingJournalId) : null;
+  if (!entry && !creatingJournalEntry) return null;
+
   const form = element("form", "journal-form");
   const title = document.createElement("input");
   title.name = "title";
@@ -41,6 +44,7 @@ function renderJournalFormActions(entry, form, controls) {
     cancel.type = "button";
     cancel.addEventListener("click", () => {
       editingJournalId = "";
+      creatingJournalEntry = false;
       render();
     });
     actions.append(cancel);
@@ -68,8 +72,7 @@ function saveJournalForm(entry, form, controls) {
     editingJournalId = "";
   } else {
     createJournalEntry(data);
-    form.reset();
-    controls.title.value = "Notes";
+    creatingJournalEntry = false;
   }
   render();
 }

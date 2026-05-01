@@ -53,6 +53,7 @@ function renderJournalActions(entry, expanded) {
   edit.type = "button";
   edit.addEventListener("click", () => {
     editingJournalId = entry.id;
+    creatingJournalEntry = false;
     render();
     dom.main.scrollIntoView({ block: "start" });
   });

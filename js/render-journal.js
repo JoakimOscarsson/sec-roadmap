@@ -4,7 +4,10 @@ function renderJournal() {
   const entries = getJournalEntries();
   const header = renderHeader("Journal", "Capture study notes, reflections, questions, and practice logs.", "Study");
   header.append(element("p", "path-note", `${entries.length} entries shown.`));
-  dom.main.append(header, renderJournalForm());
+  dom.main.append(header, renderJournalToolbar());
+
+  const form = renderJournalForm();
+  if (form) dom.main.append(form);
 
   if (!entries.length) {
     dom.main.append(element("p", "empty", state.query.trim() ? "No journal entries match the current search." : "No journal entries yet."));
@@ -26,6 +29,22 @@ function renderJournal() {
   });
 
   dom.main.append(wrapper);
+}
+
+function renderJournalToolbar() {
+  const toolbar = element("div", "journal-toolbar");
+  const add = element("button", "journal-add", "+");
+  add.type = "button";
+  add.title = "Add journal entry";
+  add.setAttribute("aria-label", "Add journal entry");
+  add.addEventListener("click", () => {
+    editingJournalId = "";
+    creatingJournalEntry = true;
+    render();
+    dom.main.scrollIntoView({ block: "start" });
+  });
+  toolbar.append(add);
+  return toolbar;
 }
 
 function renderJournalNav() {

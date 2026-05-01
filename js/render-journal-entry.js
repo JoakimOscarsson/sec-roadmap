@@ -1,10 +1,10 @@
-let expandedJournalId = "";
+let expandedJournalIds = new Set();
 
 function renderJournalEntry(entry) {
   if (inlineEditingJournalId === entry.id) return renderJournalInlineEditItem(entry);
 
   const card = element("article", "journal-card");
-  const expanded = expandedJournalId === entry.id;
+  const expanded = expandedJournalIds.has(entry.id);
   card.dataset.journalId = entry.id;
   card.classList.toggle("expanded", expanded);
   card.append(renderJournalRow(entry, expanded), renderJournalExpansion(entry, expanded));
@@ -17,7 +17,9 @@ function renderJournalRow(entry, expanded) {
   toggle.type = "button";
   toggle.setAttribute("aria-expanded", String(expanded));
   toggle.setAttribute("aria-controls", journalPanelId(entry));
-  toggle.addEventListener("click", () => toggleJournalEntryExpansion(entry.id));
+  toggle.addEventListener("click", (event) => {
+    toggleJournalEntryExpansion(entry.id, event.metaKey || event.ctrlKey);
+  });
 
   const content = element("div", "journal-row-content");
   const title = element("h3", "journal-card-title", entry.title);
@@ -160,7 +162,7 @@ function renderJournalActions(entry) {
   remove.title = "Delete journal entry";
   remove.setAttribute("aria-label", `Delete ${entry.title}`);
   remove.addEventListener("click", () => {
-    if (expandedJournalId === entry.id) expandedJournalId = "";
+    expandedJournalIds.delete(entry.id);
     deleteJournalEntry(entry.id);
   });
   actions.append(edit, remove);
@@ -183,14 +185,27 @@ function openJournalFocusedEdit(entryId) {
   dom.main.scrollIntoView({ block: "start" });
 }
 
-function toggleJournalEntryExpansion(entryId) {
-  const nextExpanded = expandedJournalId !== entryId;
-  const previousCard = findJournalCard(expandedJournalId);
-  if (previousCard) setJournalEntryExpanded(previousCard, false);
-
-  expandedJournalId = nextExpanded ? entryId : "";
+function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
   const currentCard = findJournalCard(entryId);
-  if (currentCard) setJournalEntryExpanded(currentCard, nextExpanded);
+
+  if (keepOtherEntriesOpen) {
+    const nextExpanded = !expandedJournalIds.has(entryId);
+    if (nextExpanded) {
+      expandedJournalIds.add(entryId);
+    } else {
+      expandedJournalIds.delete(entryId);
+    }
+    if (currentCard) setJournalEntryExpanded(currentCard, nextExpanded);
+    return;
+  }
+
+  expandedJournalIds.forEach((expandedId) => {
+    if (expandedId === entryId) return;
+    const card = findJournalCard(expandedId);
+    if (card) setJournalEntryExpanded(card, false);
+  });
+  expandedJournalIds = new Set([entryId]);
+  if (currentCard) setJournalEntryExpanded(currentCard, true);
 }
 
 function setJournalEntryExpanded(card, expanded) {

@@ -66,6 +66,7 @@ function renderBlocks(lines, chapter, section, parent, trackItems) {
           }),
           renderFavoriteButton(key, itemText),
           inlineHtml("span", itemText),
+          renderJournalLinkIndicator(key, itemText),
           renderLevelDates(key, itemText)
         );
         item.append(row);

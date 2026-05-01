@@ -147,7 +147,7 @@
 
 .item-row {
   display: grid;
-  grid-template-columns: 22px 22px minmax(0, 1fr) max-content;
+  grid-template-columns: 22px 22px minmax(0, 1fr) 22px max-content;
   gap: 10px;
   align-items: start;
   color: var(--text);
@@ -156,3 +156,4 @@
 
 .item.done .item-row > span {
   color: var(--muted);
+}

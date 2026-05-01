@@ -53,6 +53,7 @@ function renderPortfolioItem(block, line, text) {
   label.setAttribute("for", checkbox.id);
   label.append(inlineHtml("span", itemText));
   row.append(checkbox, renderFavoriteButton(key, itemText), label);
+  row.append(renderJournalLinkIndicator(key, itemText));
   item.classList.toggle("done", checkbox.checked);
   item.append(row);
   return item;
@@ -118,6 +119,7 @@ function renderStudyPlanRow(favorite) {
     }),
     renderFavoriteButton(favorite.key, favorite.itemText),
     inlineHtml("div", favorite.itemText),
+    renderJournalLinkIndicator(favorite.key, favorite.itemText),
     renderLevelDates(favorite.key, favorite.itemText)
   );
   return row;
@@ -135,7 +137,12 @@ function renderPortfolioPlanRow(favorite) {
   });
   const text = inlineHtml("div", favorite.itemText);
   text.classList.add("plan-text");
-  row.append(checkbox, renderFavoriteButton(favorite.key, favorite.itemText), text);
+  row.append(
+    checkbox,
+    renderFavoriteButton(favorite.key, favorite.itemText),
+    text,
+    renderJournalLinkIndicator(favorite.key, favorite.itemText)
+  );
   return row;
 }
 

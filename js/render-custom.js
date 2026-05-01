@@ -76,6 +76,7 @@ function renderCustomItem(item) {
     }),
     renderFavoriteButton(item.key, item.itemText),
     content,
+    renderJournalLinkIndicator(item.key, item.itemText),
     renderLevelDates(item.key, item.itemText),
     renderCustomActions(item)
   );

@@ -6,6 +6,8 @@ function renderJournal() {
   const meta = element("div", "journal-header-meta");
   meta.append(element("p", "path-note", `${entries.length} entries shown.`), renderJournalToolbar());
   header.append(meta);
+  const linkFilter = renderJournalLinkFilter();
+  if (linkFilter) header.append(linkFilter);
   dom.main.append(header);
 
   const form = renderJournalForm();
@@ -13,7 +15,7 @@ function renderJournal() {
 
   const groups = getJournalGroupsForRender(entries);
   if (!groups.length) {
-    dom.main.append(element("p", "empty", state.query.trim() ? "No journal entries match the current search." : "No journal entries yet."));
+    dom.main.append(element("p", "empty", journalEmptyMessage()));
     return;
   }
 
@@ -45,6 +47,38 @@ function renderJournal() {
   dom.main.append(wrapper);
 }
 
+function renderJournalLinkFilter() {
+  const key = getActiveJournalLinkFilter();
+  if (!key) return null;
+
+  const target = getJournalTarget(key);
+  const wrapper = element("div", "journal-filter");
+  const text = target
+    ? trimText(plainText(target.itemText), 110)
+    : trimText(key, 110);
+  const context = target ? journalTargetContext(target) : "Linked item";
+  const label = element("div", "journal-filter-label");
+  label.append(
+    element("span", "journal-filter-kicker", "Linked to"),
+    element("span", "journal-filter-title", text),
+    element("span", "journal-filter-context", context)
+  );
+
+  const clear = element("button", "journal-filter-clear", "×");
+  clear.type = "button";
+  clear.title = "Clear linked item filter";
+  clear.setAttribute("aria-label", "Clear linked item filter");
+  clear.addEventListener("click", clearJournalLinkFilter);
+
+  wrapper.append(label, clear);
+  return wrapper;
+}
+
+function journalEmptyMessage() {
+  if (getActiveJournalLinkFilter()) return "No journal entries are linked to this item.";
+  return state.query.trim() ? "No journal entries match the current search." : "No journal entries yet.";
+}
+
 function renderJournalToolbar() {
   const toolbar = element("div", "journal-toolbar");
   const add = element("button", "journal-add", "+");
@@ -65,7 +99,7 @@ function renderJournalNav() {
   const groups = getJournalGroupsForRender(getJournalEntries());
   if (!groups.length) {
     const item = element("li");
-    item.append(element("p", "empty", state.query.trim() ? "No matching journal entries." : "No journal entries yet."));
+    item.append(element("p", "empty", journalEmptyMessage()));
     dom.nav.append(item);
     return;
   }

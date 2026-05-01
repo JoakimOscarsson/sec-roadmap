@@ -30,7 +30,7 @@
 
 .portfolio-row {
   display: grid;
-  grid-template-columns: 22px 22px minmax(0, 1fr);
+  grid-template-columns: 22px 22px minmax(0, 1fr) 22px;
   gap: 10px;
   align-items: start;
   color: var(--text-2);

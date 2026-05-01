@@ -1,8 +1,10 @@
 function getJournalEntries() {
   const query = state.query.trim().toLowerCase();
+  const linkFilter = getActiveJournalLinkFilter();
   return state.journal
     .map(normalizeJournalEntry)
     .filter(Boolean)
+    .filter((entry) => !linkFilter || entry.linkedItemKeys.includes(linkFilter))
     .filter((entry) => !query || journalEntrySearchText(entry).includes(query))
     .sort(compareJournalEntries);
 }
@@ -83,7 +85,9 @@ function parseJournalTags(value) {
 function compareJournalEntries(left, right) {
   const dateDiff = dayNumber(right.date) - dayNumber(left.date);
   if (dateDiff) return dateDiff;
-  return String(right.updatedAt).localeCompare(String(left.updatedAt));
+  const createdDiff = String(right.createdAt).localeCompare(String(left.createdAt));
+  if (createdDiff) return createdDiff;
+  return String(right.id).localeCompare(String(left.id));
 }
 
 function journalEntrySearchText(entry) {
@@ -123,6 +127,33 @@ function getJournalLinkTargets() {
 
 function getJournalTarget(key) {
   return getJournalLinkTargets().find((target) => target.key === key) || null;
+}
+
+function getActiveJournalLinkFilter() {
+  return typeof state.journalLinkFilter === "string" ? state.journalLinkFilter : "";
+}
+
+function getJournalLinkCount(key) {
+  if (!key) return 0;
+  return state.journal
+    .map(normalizeJournalEntry)
+    .filter(Boolean)
+    .filter((entry) => entry.linkedItemKeys.includes(key))
+    .length;
+}
+
+function openJournalLinkFilter(key) {
+  if (!key) return;
+  state.view = "journal";
+  state.journalLinkFilter = key;
+  state.query = "";
+  if (dom.search) dom.search.value = "";
+  render();
+}
+
+function clearJournalLinkFilter() {
+  state.journalLinkFilter = "";
+  render();
 }
 
 function journalTargetSearchText(key) {

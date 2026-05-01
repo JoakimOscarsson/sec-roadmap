@@ -10,6 +10,7 @@ function createDefaultState() {
     tab: "core",
     query: "",
     level: "all",
+    journalLinkFilter: "",
     selected: {
       core: "",
       specializations: ""
@@ -35,6 +36,7 @@ function normalizeState(saved) {
       tab: validTabs.includes(saved?.tab) ? saved.tab : "core",
       query: typeof saved?.query === "string" ? saved.query : "",
       level: ["all", "0", "1", "2", "3"].includes(saved?.level) ? saved.level : "all",
+      journalLinkFilter: typeof saved?.journalLinkFilter === "string" ? saved.journalLinkFilter : "",
       selected: {
         core: saved?.selected?.core || "",
         specializations: saved?.selected?.specializations || ""

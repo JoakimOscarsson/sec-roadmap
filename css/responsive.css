@@ -21,7 +21,12 @@
   .item-row,
   .favorite-row,
   .custom-row {
-    grid-template-columns: 22px 22px minmax(0, 1fr);
+    grid-template-columns: 22px 22px minmax(0, 1fr) 22px;
+  }
+
+  .portfolio-row,
+  .portfolio-plan-row {
+    grid-template-columns: 22px 22px minmax(0, 1fr) 22px;
   }
 
   .custom-form {
@@ -33,7 +38,7 @@
   }
 
   .review-row {
-    grid-template-columns: 22px 22px 22px minmax(0, 1fr);
+    grid-template-columns: 22px 22px 22px minmax(0, 1fr) 22px;
   }
 
   .level-dates {
@@ -46,11 +51,15 @@
   .item-row .level-dates,
   .favorite-row .level-dates,
   .custom-row .level-dates {
-    grid-column: 3;
+    grid-column: 3 / -1;
+  }
+
+  .review-row .level-dates {
+    grid-column: 4 / -1;
   }
 
   .custom-actions {
-    grid-column: 3;
+    grid-column: 3 / -1;
     justify-content: flex-start;
   }
 }

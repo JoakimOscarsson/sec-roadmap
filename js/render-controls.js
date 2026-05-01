@@ -72,6 +72,26 @@ function renderLevelDates(key, text) {
   return wrapper;
 }
 
+function renderJournalLinkIndicator(key, text) {
+  const count = getJournalLinkCount(key);
+  if (!count) {
+    const spacer = element("span", "journal-link-indicator-spacer");
+    spacer.setAttribute("aria-hidden", "true");
+    return spacer;
+  }
+
+  const button = element("button", "journal-link-indicator", count > 9 ? "9+" : String(count));
+  button.type = "button";
+  const entryLabel = count === 1 ? "entry" : "entries";
+  button.title = `${count} linked journal ${entryLabel}`;
+  button.setAttribute("aria-label", `Show ${count} journal ${entryLabel} linked to ${plainText(text)}`);
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    openJournalLinkFilter(key);
+  });
+  return button;
+}
+
 function renderDateEditor(key, level, text) {
   const editor = element("div", "date-editor");
   const input = document.createElement("input");

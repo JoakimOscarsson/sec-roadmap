@@ -26,3 +26,35 @@
   font-size: 12px;
   font-variant-numeric: tabular-nums;
 }
+
+.journal-link-indicator,
+.journal-link-indicator-spacer {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.journal-link-indicator {
+  appearance: none;
+  border: 1px solid var(--line-soft);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  padding: 0;
+}
+
+.journal-link-indicator:hover {
+  border-color: var(--accent-soft);
+  background: rgba(138, 118, 84, 0.08);
+  color: var(--text);
+}
+
+.journal-link-indicator-spacer {
+  visibility: hidden;
+}

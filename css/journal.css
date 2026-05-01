@@ -27,6 +27,8 @@
   inset: 0 0 0 320px;
   z-index: 20;
   display: grid;
+  justify-items: start;
+  overflow-y: auto;
   background: var(--bg);
 }
 
@@ -34,6 +36,8 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 18px;
+  width: 100%;
+  max-width: 920px;
   min-width: 0;
   min-height: 0;
   padding: 56px 64px 34px;
@@ -61,6 +65,10 @@
   color: var(--muted);
 }
 
+.journal-title-input:focus-visible {
+  outline: 0;
+}
+
 .journal-editor-date {
   color: var(--text-2);
   font-size: 13.5px;
@@ -83,6 +91,10 @@
 
 .journal-note-input::placeholder {
   color: var(--muted);
+}
+
+.journal-note-input:focus-visible {
+  outline: 0;
 }
 
 .journal-form-actions {

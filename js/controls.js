@@ -64,6 +64,28 @@ function bindEvents() {
     state.portfolio = {};
     render();
   });
+
+  if (typeof document.addEventListener === "function") {
+    document.addEventListener("keydown", handleGlobalKeydown);
+  }
+}
+
+function handleGlobalKeydown(event) {
+  if (event.key !== "Enter") return;
+  if (state.view !== "journal" || editingJournalId || creatingJournalEntry) return;
+  if (isInteractiveKeyboardTarget(event.target)) return;
+
+  event.preventDefault();
+  openJournalCreate();
+}
+
+function isInteractiveKeyboardTarget(target) {
+  if (!target) return false;
+  const tag = String(target.tagName || "").toLowerCase();
+  if (["button", "input", "select", "textarea"].includes(tag)) return true;
+  if (target.isContentEditable) return true;
+  if (typeof target.getAttribute === "function" && target.getAttribute("role") === "button") return true;
+  return target.attributes?.role === "button";
 }
 
 function updateTabButtons() {

@@ -110,7 +110,7 @@ function renderPinIcon(className) {
   const icon = element("span", className);
   icon.setAttribute("aria-hidden", "true");
   icon.innerHTML = `
-    <svg viewBox="0 0 24 24" focusable="false">
+    <svg viewBox="-1 -2 26 28" focusable="false">
       <g class="pin-shape" transform="rotate(35 12 12)">
         <path d="M6.5 3.5c0 4.2 2.1 4.2 2.1 7.4s-2.1 3.2-2.1 4.3h11c0-1.1-2.1-1.1-2.1-4.3s2.1-3.2 2.1-7.4z"/>
         <path d="M11.1 15.2h1.8L12 22z"/>

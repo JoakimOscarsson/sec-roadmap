@@ -57,11 +57,11 @@ function renderReviewItem(item) {
   content.append(inlineHtml("div", item.itemText), context);
 
   row.append(
+    renderReviewCompleteControl(item),
     renderLevelButton(item.level, {
       label: `Set study level for ${plainText(item.itemText)}`,
       onClick: () => cycleKeyLevel(item.key)
     }),
-    renderReviewCompleteControl(item),
     renderFavoriteButton(item.key, item.itemText),
     content,
     renderLevelDates(item.key, item.itemText)

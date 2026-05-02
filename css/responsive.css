@@ -18,6 +18,16 @@
     width: 100%;
   }
 
+  .journal-header-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .journal-toolbar {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .item-row,
   .favorite-row,
   .custom-row {

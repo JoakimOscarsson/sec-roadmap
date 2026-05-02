@@ -4,6 +4,12 @@
   margin-top: 20px;
 }
 
+.plan-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
 .favorite-card {
   background: var(--panel);
   border: 1px solid var(--line-soft);

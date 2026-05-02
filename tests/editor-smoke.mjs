@@ -16,6 +16,7 @@ if (distScript.includes("data:text/javascript")) {
 }
 const backupSource = readFileSync(new URL("../js/backup.js", import.meta.url), "utf8");
 const journalDataSource = readFileSync(new URL("../js/journal-data.js", import.meta.url), "utf8");
+const prettyExportSource = readFileSync(new URL("../js/pretty-export.js", import.meta.url), "utf8");
 const journalCommandsSource = readFileSync(new URL("../js/journal-commands.js", import.meta.url), "utf8");
 const renderJournalFormSource = readFileSync(new URL("../js/render-journal-form.js", import.meta.url), "utf8");
 
@@ -45,14 +46,16 @@ globalThis.dispatchEvent = window.dispatchEvent.bind(window);
 window.plainText = (value) => String(value ?? "");
 window.trimText = (value, max) => String(value ?? "").slice(0, max);
 window.journalTargetContext = (target) => target.context;
-window.state = { favorites: { "core:1": true }, journal: [], activity: [], journalTypeFilter: "all" };
+window.state = { favorites: { "core:1": true }, journal: [], activity: [], journalTypeFilter: "all", journalExportRange: "30" };
 window.isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+window.isValidJournalExportRange = (value) => ["7", "14", "30", "90", "180", "365", "all"].includes(value);
 window.todayDate = () => "2026-05-02";
 window.dayNumber = (value) => {
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return Infinity;
   return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86400000;
 };
+window.ageInDays = (value) => window.dayNumber("2026-05-02") - window.dayNumber(value);
 window.getJournalLinkTargets = () => [
   { key: "core:1", itemText: "Identity and access management", context: "Core / Governance" },
   { key: "custom:1", itemText: "Custom cloud exercise: Lab notes", context: "Custom" }
@@ -70,6 +73,7 @@ window.normalizeState = (value) => ({
   query: value.query || "",
   level: value.level || "all",
   journalTypeFilter: value.journalTypeFilter || "all",
+  journalExportRange: value.journalExportRange || "30",
   journalLinkFilter: value.journalLinkFilter || "",
   journalTagFilter: value.journalTagFilter || "",
   selected: value.selected || { core: "", specializations: "" },
@@ -78,6 +82,7 @@ window.normalizeState = (value) => ({
 });
 window.eval(backupSource);
 window.eval(journalDataSource);
+window.eval(prettyExportSource);
 window.eval(journalCommandsSource);
 window.eval(renderJournalFormSource);
 window.journalTargetContext = (target) => target.context;
@@ -190,6 +195,26 @@ if (window.getJournalEntries().length || window.getJournalTimelineItems().some((
   throw new Error("The journal type filter should be able to show only activity events.");
 }
 window.state.journalTypeFilter = "all";
+window.state.activity.push({
+  id: "activity-old",
+  kind: "level-change",
+  message: "Old level change",
+  date: "2026-03-01",
+  occurredAt: "2026-03-01T10:00:00.000Z",
+  itemKey: "",
+  itemKeys: [],
+  context: ""
+});
+window.state.journalExportRange = "30";
+if (window.getJournalExportTimelineItems().some((item) => item.id === "activity:activity-old")) {
+  throw new Error("Journal PDF export ranges should exclude older timeline items.");
+}
+window.state.journalExportRange = "all";
+if (!window.getJournalExportTimelineItems().some((item) => item.id === "activity:activity-old")) {
+  throw new Error("Journal PDF export should support all-time exports.");
+}
+window.state.activity = window.state.activity.filter((item) => item.id !== "activity-old");
+window.state.journalExportRange = "30";
 window.state.journalLinkFilter = "core:1";
 if (window.getJournalActivityEvents().length !== 2) {
   throw new Error("Journal activity events should respect linked-item filters.");

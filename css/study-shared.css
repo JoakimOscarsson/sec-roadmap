@@ -21,6 +21,28 @@
   color: #7f4b3a;
 }
 
+.pdf-export-btn {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  height: 30px;
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 8px;
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.pdf-export-btn:hover {
+  border-color: var(--accent-soft);
+  color: var(--text-2);
+}
+
 .review-count {
   color: var(--muted);
   font-size: 12px;

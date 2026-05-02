@@ -1,3 +1,9 @@
+const JOURNAL_EXPORT_RANGES = ["7", "14", "30", "90", "180", "365", "all"];
+
+function isValidJournalExportRange(value) {
+  return JOURNAL_EXPORT_RANGES.includes(value);
+}
+
 function createDefaultState() {
   return {
     checked: {},
@@ -12,6 +18,7 @@ function createDefaultState() {
     query: "",
     level: "all",
     journalTypeFilter: "all",
+    journalExportRange: "30",
     journalLinkFilter: "",
     journalTagFilter: "",
     selected: {
@@ -41,6 +48,7 @@ function normalizeState(saved) {
       query: typeof saved?.query === "string" ? saved.query : "",
       level: ["all", "0", "1", "2", "3"].includes(saved?.level) ? saved.level : "all",
       journalTypeFilter: ["all", "notes", "activity"].includes(saved?.journalTypeFilter) ? saved.journalTypeFilter : "all",
+      journalExportRange: isValidJournalExportRange(saved?.journalExportRange) ? saved.journalExportRange : "30",
       journalLinkFilter: typeof saved?.journalLinkFilter === "string" ? saved.journalLinkFilter : "",
       journalTagFilter: typeof saved?.journalTagFilter === "string" ? saved.journalTagFilter : "",
       selected: {

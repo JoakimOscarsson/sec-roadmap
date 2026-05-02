@@ -87,6 +87,7 @@ function isRoadmapStateCandidate(value) {
     "query",
     "level",
     "journalTypeFilter",
+    "journalExportRange",
     "selected",
     "view"
   ].some((key) => Object.prototype.hasOwnProperty.call(value, key));

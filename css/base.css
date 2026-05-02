@@ -88,6 +88,8 @@ textarea:focus-visible,
 .journal-filter-clear:focus-visible,
 .journal-icon-btn:focus-visible,
 .journal-link-indicator:focus-visible,
+.journal-export-range:focus-visible,
+.pdf-export-btn:focus-visible,
 .date-chip:focus-visible,
 .date-update:focus-visible {
   outline: 2px solid var(--accent-soft);

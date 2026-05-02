@@ -64,6 +64,9 @@ function renderFavorites() {
 
   const favorites = getFavoriteItems();
   const header = renderHeader("Plan", "Pin roadmap, custom, or portfolio items to build your current study plan.", "Study");
+  const toolbar = element("div", "plan-toolbar");
+  toolbar.append(renderPdfExportButton("Export plan as PDF", exportPlanPdf));
+  header.append(toolbar);
   dom.main.append(header);
 
   if (!favorites.length) {

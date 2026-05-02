@@ -20,6 +20,7 @@ import customDataSource from "./custom-data.js?raw";
 import collectionsSource from "./collections.js?raw";
 import journalDataSource from "./journal-data.js?raw";
 import backupSource from "./backup.js?raw";
+import prettyExportSource from "./pretty-export.js?raw";
 import actionsSource from "./actions.js?raw";
 import controlsSource from "./controls.js?raw";
 import renderControlsSource from "./render-controls.js?raw";
@@ -62,6 +63,7 @@ const legacyScripts = [
   collectionsSource,
   journalDataSource,
   backupSource,
+  prettyExportSource,
   actionsSource,
   controlsSource,
   renderControlsSource,

@@ -49,6 +49,16 @@
   color: var(--text-2);
 }
 
+.journal-export-range {
+  min-height: 30px;
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-2);
+  padding: 0 7px;
+  font-size: 12px;
+}
+
 .journal-filter {
   display: flex;
   align-items: center;

@@ -146,7 +146,12 @@ function renderJournalToolbar() {
     event.preventDefault();
     openJournalCreate();
   });
-  toolbar.append(renderJournalTypeFilter(), add);
+  toolbar.append(
+    renderJournalTypeFilter(),
+    renderJournalExportRangeControl(),
+    renderPdfExportButton("Export journal as PDF", exportJournalPdf),
+    add
+  );
   return toolbar;
 }
 

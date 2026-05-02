@@ -80,7 +80,7 @@ function renderOverallProgress(visible) {
   }
 
   if (state.view === "journal") {
-    const entries = getJournalEntries();
+    const entries = getJournalTimelineItems();
     dom.progressScope.textContent = "Journal";
     dom.overallPct.textContent = `${entries.length}`;
     dom.overallBar.style.width = "0%";

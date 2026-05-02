@@ -12,8 +12,41 @@
 
 .journal-toolbar {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
+  gap: 10px;
   margin: 0;
+}
+
+.journal-type-filter {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-soft);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.journal-type-filter button {
+  appearance: none;
+  border: 0;
+  border-left: 1px solid var(--line-soft);
+  background: transparent;
+  color: var(--muted);
+  min-height: 28px;
+  padding: 0 9px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.journal-type-filter button:first-child {
+  border-left: 0;
+}
+
+.journal-type-filter button:hover,
+.journal-type-filter button.active {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text-2);
 }
 
 .journal-filter {
@@ -435,8 +468,8 @@
 
 .journal-activity {
   display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
-  align-items: start;
+  grid-template-columns: 12px minmax(0, 1fr) 166px;
+  align-items: center;
   gap: 8px;
   padding: 4px 8px;
   color: var(--text-2);
@@ -461,9 +494,11 @@
 }
 
 .journal-activity-context,
-.journal-activity-date {
+.journal-timeline-date {
   color: var(--muted);
   font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
 .journal-activity-context {
@@ -473,9 +508,25 @@
   white-space: nowrap;
 }
 
+.journal-activity-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 166px;
+}
+
 .journal-activity-date {
+  display: inline-flex;
+  align-items: center;
+  min-height: 18px;
+  padding: 0 5px;
   white-space: nowrap;
-  padding-top: 1px;
+}
+
+.journal-activity-actions {
+  min-width: 45px;
+  justify-content: flex-end;
 }
 
 .journal-card {
@@ -602,6 +653,15 @@
   background: transparent;
   border-color: transparent;
   color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.2;
+  padding: 0 5px;
+}
+
+.journal-date-chip:hover:not(:disabled) {
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-2);
 }
 
 .journal-row-actions {

@@ -6,6 +6,7 @@ const journalInlineAutosaveTimers = new Map();
 
 function openJournalCreate() {
   saveJournalInlineEditors();
+  if (getActiveJournalTypeFilter() === "activity") state.journalTypeFilter = "notes";
   editingJournalId = "";
   const entry = createJournalEntry(journalCreateEntryData());
   if (!entry) return;

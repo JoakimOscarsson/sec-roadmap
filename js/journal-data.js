@@ -1,7 +1,9 @@
 function getJournalEntries() {
   const query = state.query.trim().toLowerCase();
+  const typeFilter = getActiveJournalTypeFilter();
   const linkFilter = getActiveJournalLinkFilter();
   const tagFilter = getActiveJournalTagFilter();
+  if (typeFilter === "activity") return [];
   return state.journal
     .map(normalizeJournalEntry)
     .filter(Boolean)
@@ -13,8 +15,10 @@ function getJournalEntries() {
 
 function getJournalActivityEvents() {
   const query = state.query.trim().toLowerCase();
+  const typeFilter = getActiveJournalTypeFilter();
   const linkFilter = getActiveJournalLinkFilter();
   const tagFilter = getActiveJournalTagFilter();
+  if (typeFilter === "notes") return [];
   return (state.activity || [])
     .map(normalizeJournalActivityEvent)
     .filter(Boolean)
@@ -140,6 +144,17 @@ function deleteJournalEntry(id) {
 
 function removeJournalEntry(id) {
   state.journal = state.journal.filter((item) => item.id !== id);
+}
+
+function deleteJournalActivityEvent(id) {
+  const event = (state.activity || []).find((item) => item?.id === id);
+  if (!event || !window.confirm("Delete this activity event?")) return;
+  removeJournalActivityEvent(id);
+  render();
+}
+
+function removeJournalActivityEvent(id) {
+  state.activity = (state.activity || []).filter((item) => item?.id !== id);
 }
 
 function createJournalId() {
@@ -314,6 +329,15 @@ function getJournalTarget(key) {
 
 function getActiveJournalLinkFilter() {
   return typeof state.journalLinkFilter === "string" ? state.journalLinkFilter : "";
+}
+
+function getActiveJournalTypeFilter() {
+  return ["all", "notes", "activity"].includes(state.journalTypeFilter) ? state.journalTypeFilter : "all";
+}
+
+function setJournalTypeFilter(value) {
+  state.journalTypeFilter = ["all", "notes", "activity"].includes(value) ? value : "all";
+  render();
 }
 
 function getActiveJournalTagFilter() {

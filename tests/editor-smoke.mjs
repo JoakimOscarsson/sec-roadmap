@@ -45,7 +45,7 @@ globalThis.dispatchEvent = window.dispatchEvent.bind(window);
 window.plainText = (value) => String(value ?? "");
 window.trimText = (value, max) => String(value ?? "").slice(0, max);
 window.journalTargetContext = (target) => target.context;
-window.state = { favorites: { "core:1": true }, journal: [], activity: [] };
+window.state = { favorites: { "core:1": true }, journal: [], activity: [], journalTypeFilter: "all" };
 window.isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
 window.todayDate = () => "2026-05-02";
 window.dayNumber = (value) => {
@@ -69,6 +69,7 @@ window.normalizeState = (value) => ({
   tab: value.tab || "core",
   query: value.query || "",
   level: value.level || "all",
+  journalTypeFilter: value.journalTypeFilter || "all",
   journalLinkFilter: value.journalLinkFilter || "",
   journalTagFilter: value.journalTagFilter || "",
   selected: value.selected || { core: "", specializations: "" },
@@ -150,7 +151,19 @@ window.openJournalTarget = (key) => {
 window.JOURNAL_TYPES = ["note"];
 
 window.state.activity = [];
+window.state.journal = [{
+  id: "journal-activity-test",
+  title: "Timeline note",
+  body: "A regular note",
+  date: "2026-05-02",
+  type: "note",
+  linkedItemKeys: [],
+  tags: [],
+  createdAt: "2026-05-02T10:00:00.000Z",
+  updatedAt: "2026-05-02T10:00:00.000Z"
+}];
 window.state.query = "";
+window.state.journalTypeFilter = "all";
 window.state.journalLinkFilter = "";
 window.state.journalTagFilter = "";
 window.logJournalLevelChange("core:1", 2);
@@ -168,6 +181,15 @@ if (!window.state.activity[2]?.message.includes("Completed portfolio item")) {
 if (window.getJournalActivityEvents().length !== 3 || window.getJournalTimelineItems().filter((item) => item.type === "activity").length !== 3) {
   throw new Error("Journal activity events should be available in the journal timeline.");
 }
+window.state.journalTypeFilter = "notes";
+if (window.getJournalActivityEvents().length || window.getJournalTimelineItems().some((item) => item.type === "activity")) {
+  throw new Error("The journal type filter should be able to show only notes.");
+}
+window.state.journalTypeFilter = "activity";
+if (window.getJournalEntries().length || window.getJournalTimelineItems().some((item) => item.type === "note")) {
+  throw new Error("The journal type filter should be able to show only activity events.");
+}
+window.state.journalTypeFilter = "all";
 window.state.journalLinkFilter = "core:1";
 if (window.getJournalActivityEvents().length !== 2) {
   throw new Error("Journal activity events should respect linked-item filters.");
@@ -178,6 +200,12 @@ if (window.getJournalActivityEvents().length) {
   throw new Error("Journal activity events should not appear inside tag-filtered note views.");
 }
 window.state.journalTagFilter = "";
+window.removeJournalActivityEvent(window.state.activity[0].id);
+if (window.state.activity.length !== 2 || window.getJournalTimelineItems().filter((item) => item.type === "activity").length !== 2) {
+  throw new Error("Journal activity events should be removable.");
+}
+window.state.activity = [];
+window.state.journal = [];
 
 window.getActiveJournalLinkFilter = () => "custom:1";
 window.getActiveJournalTagFilter = () => "review";

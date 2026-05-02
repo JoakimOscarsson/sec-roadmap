@@ -52,12 +52,23 @@ function journalTimelineCountLabel(noteCount, activityCount) {
 function renderJournalActivityEvent(event) {
   const item = element("div", "journal-activity");
   const content = element("div", "journal-activity-content");
+  const side = element("div", "journal-activity-side");
+  const actions = element("div", "journal-row-actions journal-activity-actions");
+  const remove = element("button", "icon-btn danger", "×");
+
+  remove.type = "button";
+  remove.title = "Delete activity event";
+  remove.setAttribute("aria-label", "Delete activity event");
+  remove.addEventListener("click", () => deleteJournalActivityEvent(event.id));
+
   content.append(element("div", "journal-activity-message", event.message));
   if (event.context) content.append(element("div", "journal-activity-context", event.context));
+  actions.append(remove);
+  side.append(element("time", "journal-timeline-date journal-activity-date", formatDate(event.date)), actions);
   item.append(
     element("span", "journal-activity-line", ""),
     content,
-    element("time", "journal-activity-date", formatDate(event.date))
+    side
   );
   return item;
 }
@@ -114,6 +125,12 @@ function journalEmptyMessage() {
   if (getActiveJournalLinkFilter() && getActiveJournalTagFilter()) return "No journal entries match the current journal filters.";
   if (getActiveJournalLinkFilter()) return "No journal entries are linked to this item.";
   if (getActiveJournalTagFilter()) return "No journal entries match this tag.";
+  if (getActiveJournalTypeFilter() === "notes") {
+    return state.query.trim() ? "No journal notes match the current search." : "No journal notes yet.";
+  }
+  if (getActiveJournalTypeFilter() === "activity") {
+    return state.query.trim() ? "No activity events match the current search." : "No activity events yet.";
+  }
   return state.query.trim() ? "No journal entries match the current search." : "No journal entries yet.";
 }
 
@@ -129,8 +146,28 @@ function renderJournalToolbar() {
     event.preventDefault();
     openJournalCreate();
   });
-  toolbar.append(add);
+  toolbar.append(renderJournalTypeFilter(), add);
   return toolbar;
+}
+
+function renderJournalTypeFilter() {
+  const active = getActiveJournalTypeFilter();
+  const wrapper = element("div", "journal-type-filter");
+  const options = [
+    ["all", "All"],
+    ["notes", "Notes"],
+    ["activity", "Activity"]
+  ];
+
+  options.forEach(([value, label]) => {
+    const button = element("button", active === value ? "active" : "", label);
+    button.type = "button";
+    button.setAttribute("aria-pressed", String(active === value));
+    button.addEventListener("click", () => setJournalTypeFilter(value));
+    wrapper.append(button);
+  });
+
+  return wrapper;
 }
 
 function renderJournalNav() {

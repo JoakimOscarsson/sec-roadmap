@@ -490,6 +490,7 @@ function uniqueSlug(text, index) {
     tab: "core",
     query: "",
     level: "all",
+    journalTypeFilter: "all",
     journalLinkFilter: "",
     journalTagFilter: "",
     selected: {
@@ -518,6 +519,7 @@ function normalizeState(saved) {
       tab: validTabs.includes(saved?.tab) ? saved.tab : "core",
       query: typeof saved?.query === "string" ? saved.query : "",
       level: ["all", "0", "1", "2", "3"].includes(saved?.level) ? saved.level : "all",
+      journalTypeFilter: ["all", "notes", "activity"].includes(saved?.journalTypeFilter) ? saved.journalTypeFilter : "all",
       journalLinkFilter: typeof saved?.journalLinkFilter === "string" ? saved.journalLinkFilter : "",
       journalTagFilter: typeof saved?.journalTagFilter === "string" ? saved.journalTagFilter : "",
       selected: {
@@ -1311,8 +1313,10 @@ function getReviewBuckets() {
 }
 `,zR=`function getJournalEntries() {
   const query = state.query.trim().toLowerCase();
+  const typeFilter = getActiveJournalTypeFilter();
   const linkFilter = getActiveJournalLinkFilter();
   const tagFilter = getActiveJournalTagFilter();
+  if (typeFilter === "activity") return [];
   return state.journal
     .map(normalizeJournalEntry)
     .filter(Boolean)
@@ -1324,8 +1328,10 @@ function getReviewBuckets() {
 
 function getJournalActivityEvents() {
   const query = state.query.trim().toLowerCase();
+  const typeFilter = getActiveJournalTypeFilter();
   const linkFilter = getActiveJournalLinkFilter();
   const tagFilter = getActiveJournalTagFilter();
+  if (typeFilter === "notes") return [];
   return (state.activity || [])
     .map(normalizeJournalActivityEvent)
     .filter(Boolean)
@@ -1451,6 +1457,17 @@ function deleteJournalEntry(id) {
 
 function removeJournalEntry(id) {
   state.journal = state.journal.filter((item) => item.id !== id);
+}
+
+function deleteJournalActivityEvent(id) {
+  const event = (state.activity || []).find((item) => item?.id === id);
+  if (!event || !window.confirm("Delete this activity event?")) return;
+  removeJournalActivityEvent(id);
+  render();
+}
+
+function removeJournalActivityEvent(id) {
+  state.activity = (state.activity || []).filter((item) => item?.id !== id);
 }
 
 function createJournalId() {
@@ -1625,6 +1642,15 @@ function getJournalTarget(key) {
 
 function getActiveJournalLinkFilter() {
   return typeof state.journalLinkFilter === "string" ? state.journalLinkFilter : "";
+}
+
+function getActiveJournalTypeFilter() {
+  return ["all", "notes", "activity"].includes(state.journalTypeFilter) ? state.journalTypeFilter : "all";
+}
+
+function setJournalTypeFilter(value) {
+  state.journalTypeFilter = ["all", "notes", "activity"].includes(value) ? value : "all";
+  render();
 }
 
 function getActiveJournalTagFilter() {
@@ -1814,6 +1840,7 @@ function isRoadmapStateCandidate(value) {
     "tab",
     "query",
     "level",
+    "journalTypeFilter",
     "selected",
     "view"
   ].some((key) => Object.prototype.hasOwnProperty.call(value, key));
@@ -3420,6 +3447,7 @@ const journalInlineAutosaveTimers = new Map();
 
 function openJournalCreate() {
   saveJournalInlineEditors();
+  if (getActiveJournalTypeFilter() === "activity") state.journalTypeFilter = "notes";
   editingJournalId = "";
   const entry = createJournalEntry(journalCreateEntryData());
   if (!entry) return;
@@ -3959,12 +3987,23 @@ function journalTimelineCountLabel(noteCount, activityCount) {
 function renderJournalActivityEvent(event) {
   const item = element("div", "journal-activity");
   const content = element("div", "journal-activity-content");
+  const side = element("div", "journal-activity-side");
+  const actions = element("div", "journal-row-actions journal-activity-actions");
+  const remove = element("button", "icon-btn danger", "×");
+
+  remove.type = "button";
+  remove.title = "Delete activity event";
+  remove.setAttribute("aria-label", "Delete activity event");
+  remove.addEventListener("click", () => deleteJournalActivityEvent(event.id));
+
   content.append(element("div", "journal-activity-message", event.message));
   if (event.context) content.append(element("div", "journal-activity-context", event.context));
+  actions.append(remove);
+  side.append(element("time", "journal-timeline-date journal-activity-date", formatDate(event.date)), actions);
   item.append(
     element("span", "journal-activity-line", ""),
     content,
-    element("time", "journal-activity-date", formatDate(event.date))
+    side
   );
   return item;
 }
@@ -4021,6 +4060,12 @@ function journalEmptyMessage() {
   if (getActiveJournalLinkFilter() && getActiveJournalTagFilter()) return "No journal entries match the current journal filters.";
   if (getActiveJournalLinkFilter()) return "No journal entries are linked to this item.";
   if (getActiveJournalTagFilter()) return "No journal entries match this tag.";
+  if (getActiveJournalTypeFilter() === "notes") {
+    return state.query.trim() ? "No journal notes match the current search." : "No journal notes yet.";
+  }
+  if (getActiveJournalTypeFilter() === "activity") {
+    return state.query.trim() ? "No activity events match the current search." : "No activity events yet.";
+  }
   return state.query.trim() ? "No journal entries match the current search." : "No journal entries yet.";
 }
 
@@ -4036,8 +4081,28 @@ function renderJournalToolbar() {
     event.preventDefault();
     openJournalCreate();
   });
-  toolbar.append(add);
+  toolbar.append(renderJournalTypeFilter(), add);
   return toolbar;
+}
+
+function renderJournalTypeFilter() {
+  const active = getActiveJournalTypeFilter();
+  const wrapper = element("div", "journal-type-filter");
+  const options = [
+    ["all", "All"],
+    ["notes", "Notes"],
+    ["activity", "Activity"]
+  ];
+
+  options.forEach(([value, label]) => {
+    const button = element("button", active === value ? "active" : "", label);
+    button.type = "button";
+    button.setAttribute("aria-pressed", String(active === value));
+    button.addEventListener("click", () => setJournalTypeFilter(value));
+    wrapper.append(button);
+  });
+
+  return wrapper;
 }
 
 function renderJournalNav() {
@@ -4162,7 +4227,7 @@ function renderOverallProgress(visible) {
   }
 
   if (state.view === "journal") {
-    const entries = getJournalEntries();
+    const entries = getJournalTimelineItems();
     dom.progressScope.textContent = "Journal";
     dom.overallPct.textContent = \`\${entries.length}\`;
     dom.overallBar.style.width = "0%";

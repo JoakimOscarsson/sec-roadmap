@@ -11,6 +11,7 @@ function createDefaultState() {
     tab: "core",
     query: "",
     level: "all",
+    journalTypeFilter: "all",
     journalLinkFilter: "",
     journalTagFilter: "",
     selected: {
@@ -39,6 +40,7 @@ function normalizeState(saved) {
       tab: validTabs.includes(saved?.tab) ? saved.tab : "core",
       query: typeof saved?.query === "string" ? saved.query : "",
       level: ["all", "0", "1", "2", "3"].includes(saved?.level) ? saved.level : "all",
+      journalTypeFilter: ["all", "notes", "activity"].includes(saved?.journalTypeFilter) ? saved.journalTypeFilter : "all",
       journalLinkFilter: typeof saved?.journalLinkFilter === "string" ? saved.journalLinkFilter : "",
       journalTagFilter: typeof saved?.journalTagFilter === "string" ? saved.journalTagFilter : "",
       selected: {

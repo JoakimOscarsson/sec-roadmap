@@ -68,6 +68,15 @@ function bindEvents() {
   if (typeof document.addEventListener === "function") {
     document.addEventListener("keydown", handleGlobalKeydown);
   }
+
+  if (typeof window.addEventListener === "function") {
+    window.addEventListener("beforeunload", persistOpenJournalEditors);
+  }
+}
+
+function persistOpenJournalEditors() {
+  if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
+  saveState();
 }
 
 function handleGlobalKeydown(event) {

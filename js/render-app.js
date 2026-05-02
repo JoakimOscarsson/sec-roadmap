@@ -1,4 +1,5 @@
 function render() {
+  if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
   destroyAllJournalEditors();
 
   if ((state.tab === "favorites" || state.tab === "custom") && (state.view === "chapter" || state.view === "track")) {

@@ -1,8 +1,6 @@
 let expandedJournalIds = new Set();
 
 function renderJournalEntry(entry) {
-  if (inlineEditingJournalId === entry.id) return renderJournalInlineEditItem(entry);
-
   const card = element("article", "journal-card");
   const expanded = expandedJournalIds.has(entry.id);
   card.dataset.journalId = entry.id;
@@ -45,32 +43,15 @@ function renderJournalExpansion(entry, expanded) {
 
   const inner = element("div", "journal-expand-inner");
   const content = element("div", "journal-expand-content");
-  content.append(renderJournalEditableBody(entry));
-
-  const links = renderJournalLinks(entry);
-  if (links) content.append(links);
+  if (expanded) {
+    content.append(renderJournalExpansionEditor(entry));
+    const links = renderJournalLinks(entry);
+    if (links) content.append(links);
+  }
 
   inner.append(content);
   panel.append(inner);
   return panel;
-}
-
-function renderJournalEditableBody(entry) {
-  const body = renderJournalMarkdownBody(entry.body);
-  body.tabIndex = 0;
-  body.setAttribute("role", "button");
-  body.setAttribute("aria-label", `Edit ${entry.title}`);
-  body.title = "Click to edit";
-  body.addEventListener("click", () => {
-    if (typeof window !== "undefined" && typeof window.getSelection === "function" && window.getSelection().toString()) return;
-    openJournalInlineEdit(entry.id);
-  });
-  body.addEventListener("keydown", (event) => {
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    openJournalInlineEdit(entry.id);
-  });
-  return body;
 }
 
 function renderJournalLinks(entry) {
@@ -169,24 +150,15 @@ function renderJournalActions(entry) {
   return actions;
 }
 
-function openJournalInlineEdit(entryId) {
-  inlineEditingJournalId = entryId;
-  editingJournalId = "";
-  creatingJournalEntry = false;
-  render();
-  findJournalCard(entryId)?.scrollIntoView({ block: "nearest" });
-}
-
 function openJournalFocusedEdit(entryId) {
   editingJournalId = entryId;
-  inlineEditingJournalId = "";
   creatingJournalEntry = false;
   render();
   dom.main.scrollIntoView({ block: "start" });
 }
 
 function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
-  const currentCard = findJournalCard(entryId);
+  saveJournalInlineEditors();
 
   if (keepOtherEntriesOpen) {
     const nextExpanded = !expandedJournalIds.has(entryId);
@@ -195,34 +167,13 @@ function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
     } else {
       expandedJournalIds.delete(entryId);
     }
-    if (currentCard) setJournalEntryExpanded(currentCard, nextExpanded);
+    render();
     return;
   }
 
-  expandedJournalIds.forEach((expandedId) => {
-    if (expandedId === entryId) return;
-    const card = findJournalCard(expandedId);
-    if (card) setJournalEntryExpanded(card, false);
-  });
-  expandedJournalIds = new Set([entryId]);
-  if (currentCard) setJournalEntryExpanded(currentCard, true);
-}
-
-function setJournalEntryExpanded(card, expanded) {
-  card.classList.toggle("expanded", expanded);
-  const toggle = card.querySelector(".journal-row-toggle");
-  const panel = card.querySelector(".journal-expand");
-  if (toggle) toggle.setAttribute("aria-expanded", String(expanded));
-  if (panel) {
-    panel.setAttribute("aria-hidden", String(!expanded));
-    panel.inert = !expanded;
-  }
-}
-
-function findJournalCard(entryId) {
-  if (!entryId) return null;
-  return Array.from(document.querySelectorAll(".journal-card"))
-    .find((card) => card.dataset.journalId === entryId) || null;
+  const onlyExpandedEntry = expandedJournalIds.size === 1 && expandedJournalIds.has(entryId);
+  expandedJournalIds = onlyExpandedEntry ? new Set() : new Set([entryId]);
+  render();
 }
 
 function journalPanelId(entry) {

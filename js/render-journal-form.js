@@ -1,10 +1,9 @@
 let editingJournalId = "";
-let inlineEditingJournalId = "";
 let creatingJournalEntry = false;
+const journalInlineEditorControls = new Map();
 
 function openJournalCreate() {
   editingJournalId = "";
-  inlineEditingJournalId = "";
   creatingJournalEntry = true;
   render();
   if (typeof document.querySelector === "function") {
@@ -15,7 +14,6 @@ function openJournalCreate() {
 function closeJournalEditor() {
   destroyAllJournalEditors();
   editingJournalId = "";
-  inlineEditingJournalId = "";
   creatingJournalEntry = false;
   render();
 }
@@ -79,8 +77,29 @@ function renderJournalCreateItem() {
   return renderJournalInlineEditor(null, "journal-create-card");
 }
 
-function renderJournalInlineEditItem(entry) {
-  return renderJournalInlineEditor(entry, "journal-inline-edit-card");
+function renderJournalExpansionEditor(entry) {
+  const wrapper = element("div", "journal-expanded-editor");
+  const title = document.createElement("input");
+  title.value = entry?.title || "Notes";
+  const subtitle = element("div", "journal-editor-subtitle", entry?.subtitle || "");
+  subtitle.hidden = true;
+
+  const controls = createJournalEditorControls(entry, title, subtitle);
+  const noteWrap = element("div", "journal-inline-note-wrap journal-expanded-note-wrap");
+  controls.editor = mountJournalEditor({
+    element: noteWrap,
+    markdown: entry?.body || "",
+    placeholder: "Notes",
+    mode: "inline",
+    metadata: controls,
+    onChange: () => resizeJournalEditor(controls.editor),
+    onKeydown: (event) => handleJournalAutosaveBodyKeydown(event, entry, controls)
+  });
+  journalInlineEditorControls.set(entry.id, controls);
+
+  wrapper.append(renderJournalEditorMeta(controls), noteWrap);
+  setTimeout(() => resizeJournalEditor(controls.editor), 0);
+  return wrapper;
 }
 
 function renderJournalInlineEditor(entry, cardClass) {
@@ -169,15 +188,7 @@ function renderJournalFormActions(entry, controls) {
 }
 
 function saveJournalForm(entry, controls) {
-  const data = {
-    title: controls.title.value.trim() || "Notes",
-    subtitle: controls.subtitle.textContent.trim(),
-    date: entry?.date || todayDate(),
-    type: entry?.type || JOURNAL_TYPES[0],
-    linkedItemKeys: uniqueJournalLinks(controls.linkedItemKeys || []),
-    tags: uniqueJournalTags(controls.tags || []),
-    body: unescapeJournalBody(getJournalEditorMarkdown(controls.editor))
-  };
+  const data = journalFormData(entry, controls);
 
   if (entry) {
     updateJournalEntry(entry.id, data);
@@ -186,8 +197,51 @@ function saveJournalForm(entry, controls) {
     createJournalEntry(data);
     creatingJournalEntry = false;
   }
-  inlineEditingJournalId = "";
   render();
+}
+
+function saveJournalInlineEditors() {
+  if (!journalInlineEditorControls.size) return;
+
+  Array.from(journalInlineEditorControls.entries()).forEach(([entryId, controls]) => {
+    saveJournalInlineEditor(entryId, controls);
+  });
+  journalInlineEditorControls.clear();
+}
+
+function saveJournalInlineEditor(entryId, controls = journalInlineEditorControls.get(entryId)) {
+  const entry = state.journal.find((item) => item.id === entryId);
+  if (!entry || !controls) return;
+
+  const data = journalFormData(entry, controls);
+  if (!journalEntryDataChanged(entry, data)) return;
+  updateJournalEntry(entry.id, data);
+  saveState();
+}
+
+function journalFormData(entry, controls) {
+  return {
+    title: controls.title.value.trim() || "Notes",
+    subtitle: controls.subtitle.textContent.trim(),
+    date: entry?.date || todayDate(),
+    type: entry?.type || JOURNAL_TYPES[0],
+    linkedItemKeys: uniqueJournalLinks(controls.linkedItemKeys || []),
+    tags: uniqueJournalTags(controls.tags || []),
+    body: unescapeJournalBody(getJournalEditorMarkdown(controls.editor))
+  };
+}
+
+function journalEntryDataChanged(entry, data) {
+  const tags = Array.isArray(entry.tags) ? entry.tags : [];
+  const linkedItemKeys = Array.isArray(entry.linkedItemKeys) ? entry.linkedItemKeys : [];
+  if ((entry.title || "") !== data.title) return true;
+  if ((entry.subtitle || "") !== data.subtitle) return true;
+  if ((entry.body || "") !== data.body) return true;
+  if ((entry.date || "") !== data.date) return true;
+  if ((entry.type || "") !== data.type) return true;
+  if (tags.join("\n") !== data.tags.join("\n")) return true;
+  if (linkedItemKeys.join("\n") !== data.linkedItemKeys.join("\n")) return true;
+  return false;
 }
 
 function handleJournalBodyKeydown(event, form, entry, controls) {
@@ -195,6 +249,12 @@ function handleJournalBodyKeydown(event, form, entry, controls) {
     event.preventDefault();
     saveJournalForm(entry, controls);
   }
+}
+
+function handleJournalAutosaveBodyKeydown(event, entry, controls) {
+  if (!isSaveShortcut(event)) return;
+  event.preventDefault();
+  saveJournalInlineEditor(entry.id, controls);
 }
 
 function isSaveShortcut(event) {

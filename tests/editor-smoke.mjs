@@ -362,6 +362,28 @@ if (controls.tags.length || headerMeta.textContent.includes("multi word tag")) {
   throw new Error("/clear-tags should remove all tags and update the journal row header immediately.");
 }
 
+insertEditorText(commandEditor, "/tag TODO");
+dispatchEditorKey(commandEditor, "keydown", "Enter");
+await flushEditorUpdates();
+if (!controls.tags.includes("TODO")) {
+  throw new Error("/tag followed by a word should add that word as a tag on Enter.");
+}
+if (adapter.getJournalEditorMarkdown(commandEditor).includes("/tag TODO")) {
+  throw new Error("/tag followed by a word should remove the command text after applying.");
+}
+insertEditorText(commandEditor, '/tag "deep review"');
+dispatchEditorKey(commandEditor, "keydown", "Enter");
+await flushEditorUpdates();
+if (!controls.tags.includes("deep review")) {
+  throw new Error("/tag followed by a quoted value should add a multi-word tag on Enter.");
+}
+insertEditorText(commandEditor, "/clear-tags");
+dispatchEditorKey(commandEditor, "keydown", "Enter");
+await flushEditorUpdates();
+if (controls.tags.length) {
+  throw new Error("/clear-tags should remove tags created through explicit /tag commands.");
+}
+
 insertEditorText(commandEditor, "/link core");
 dispatchEditorKey(commandEditor, "keyup", "e");
 await flushEditorUpdates();

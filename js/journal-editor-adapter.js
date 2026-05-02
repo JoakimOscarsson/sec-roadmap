@@ -362,6 +362,9 @@ function applyMilkdownLineCommandOnEnter(instance, event) {
   const subtitle = range.text.match(/^\/(?:st|subtitle|substitle)\s+(.+)$/i);
   if (subtitle) return applyMilkdownTextCommand(event, instance, range, "subtitle", subtitle[1]);
 
+  const tag = range.text.match(/^\/tag\s+(.+)$/i);
+  if (tag) return applyMilkdownTagCommand(event, instance, range, tag[1]);
+
   const clear = range.text.match(/^\/(clear-subtitle|clear-links|clear-tags)\s*$/i);
   if (clear) {
     event.preventDefault();
@@ -386,6 +389,20 @@ function applyMilkdownTextCommand(event, instance, range, target, rawValue) {
     instance.controls.subtitleSource = "manual";
   }
 
+  removeMilkdownCommandText(instance, range);
+  closeMilkdownCommandMenu(instance);
+  refreshMilkdownJournalMeta(instance);
+  return true;
+}
+
+function applyMilkdownTagCommand(event, instance, range, rawValue) {
+  const value = typeof window.unquoteJournalCommandValue === "function"
+    ? window.unquoteJournalCommandValue(rawValue).trim()
+    : String(rawValue).trim();
+  if (!value || !instance.controls) return false;
+
+  event.preventDefault();
+  addMilkdownJournalTag(instance, value);
   removeMilkdownCommandText(instance, range);
   closeMilkdownCommandMenu(instance);
   refreshMilkdownJournalMeta(instance);

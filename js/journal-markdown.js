@@ -15,7 +15,8 @@ export function renderJournalMarkdownBody(markdown) {
   const wrapper = document.createElement("div");
   wrapper.className = "journal-body journal-body-edit";
 
-  if (!String(markdown || "").trim()) {
+  const source = normalizeJournalDisplayMarkdown(markdown);
+  if (!source.trim()) {
     const empty = document.createElement("p");
     empty.className = "journal-body-paragraph journal-body-empty";
     empty.textContent = "No notes.";
@@ -23,10 +24,14 @@ export function renderJournalMarkdownBody(markdown) {
     return wrapper;
   }
 
-  wrapper.innerHTML = journalMarkdown.render(markdown);
+  wrapper.innerHTML = journalMarkdown.render(source);
   wrapper.querySelectorAll("a[href]").forEach((link) => {
     link.target = "_blank";
     link.rel = "noreferrer";
   });
   return wrapper;
+}
+
+function normalizeJournalDisplayMarkdown(markdown) {
+  return String(markdown || "").replace(/(^|\n)[ \t]*<br\s*\/?>[ \t]*(?=\n|$)/gi, "$1&nbsp;");
 }

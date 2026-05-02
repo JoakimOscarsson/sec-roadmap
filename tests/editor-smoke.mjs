@@ -132,6 +132,16 @@ if (unsafe.querySelector("img") || !unsafe.textContent.includes("<img")) {
   throw new Error("Read-only markdown renderer did not escape unsafe HTML.");
 }
 
+const blankLine = markdown.renderJournalMarkdownBody("First\n\n<br />\n\nSecond");
+if (blankLine.textContent.includes("<br") || blankLine.querySelectorAll("p").length !== 3) {
+  throw new Error("Milkdown blank paragraph markers should render as blank lines, not visible HTML text.");
+}
+
+const inlineBreakText = markdown.renderJournalMarkdownBody("Literal <br /> tag");
+if (!inlineBreakText.textContent.includes("<br />")) {
+  throw new Error("Inline literal HTML should still be escaped as text.");
+}
+
 const commandHost = document.createElement("div");
 document.body.append(commandHost);
 const title = document.createElement("input");

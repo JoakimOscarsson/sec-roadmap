@@ -14,6 +14,13 @@ const distScript = readFileSync(new URL(`../dist/${scriptMatch[1].replace(/^\.\/
 if (distScript.includes("data:text/javascript")) {
   throw new Error("Built app should not dynamically load legacy scripts as external resources.");
 }
+if (distScript.includes("function prettyPdfStyles")) {
+  throw new Error("PDF export implementation should stay outside the initial app bundle.");
+}
+const distPrettyExport = readFileSync(new URL("../dist/js/pretty-export.js", import.meta.url), "utf8");
+if (!distPrettyExport.includes("window.prettyExportLoaded")) {
+  throw new Error("Built app should emit the lazy PDF export script.");
+}
 const backupSource = readFileSync(new URL("../js/backup.js", import.meta.url), "utf8");
 const journalDataSource = readFileSync(new URL("../js/journal-data.js", import.meta.url), "utf8");
 const prettyExportSource = readFileSync(new URL("../js/pretty-export.js", import.meta.url), "utf8");

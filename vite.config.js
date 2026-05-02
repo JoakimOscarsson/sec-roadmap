@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { readFileSync } from "node:fs";
 
 function buildEntryPlugin() {
   return {
@@ -30,9 +31,23 @@ function portableFileBuildPlugin() {
   };
 }
 
+function auxiliaryClassicScriptsPlugin() {
+  return {
+    name: "auxiliary-classic-scripts",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "js/pretty-export.js",
+        source: readFileSync(new URL("./js/pretty-export.js", import.meta.url), "utf8")
+      });
+    }
+  };
+}
+
 export default defineConfig({
   base: "./",
-  plugins: [buildEntryPlugin(), portableFileBuildPlugin()],
+  plugins: [buildEntryPlugin(), auxiliaryClassicScriptsPlugin(), portableFileBuildPlugin()],
   build: {
     outDir: "dist",
     emptyOutDir: true,

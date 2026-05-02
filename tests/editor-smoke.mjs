@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { TextSelection } from "@milkdown/prose/state";
 import { Window } from "happy-dom";
 
 const distIndex = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
@@ -93,6 +94,11 @@ function dispatchEditorKey(editor, type, key, options = {}) {
   });
   editor.root.querySelector(".ProseMirror").dispatchEvent(event);
   return event;
+}
+
+function setEditorCursorToEnd(editor) {
+  const { state } = editor.view;
+  editor.view.dispatch(state.tr.setSelection(TextSelection.atEnd(state.doc)));
 }
 
 const host = document.createElement("div");
@@ -196,11 +202,43 @@ await flushEditorUpdates();
 if (!commandHost.querySelector(".journal-command-menu")) {
   throw new Error("Slash command menu did not appear.");
 }
+const commandMenu = commandHost.querySelector(".journal-command-menu");
+if (commandMenu.style.bottom !== "auto") {
+  throw new Error("Slash command menu should be positioned relative to the active line, not anchored to the editor bottom.");
+}
 dispatchEditorKey(commandEditor, "keydown", "Enter");
 await flushEditorUpdates();
 if (!controls.linkedItemKeys.includes("core:1")) {
   throw new Error("Link slash command did not update linked item metadata.");
 }
+
+insertEditorText(commandEditor, "\\/Escape");
+dispatchEditorKey(commandEditor, "keyup", "/");
+await flushEditorUpdates();
+const escapedMarkdown = adapter.getJournalEditorMarkdown(commandEditor);
+if (escapedMarkdown.includes("\\/Escape") || !escapedMarkdown.includes("\u200C/Escape")) {
+  throw new Error("Escaped slash commands should be persisted with an inert slash marker.");
+}
+if (commandHost.querySelector(".journal-command-menu")) {
+  throw new Error("Escaped slash commands should not open autocomplete.");
+}
+
+const reopenedHost = document.createElement("div");
+document.body.append(reopenedHost);
+const reopenedEditor = adapter.mountJournalEditor({
+  element: reopenedHost,
+  markdown: escapedMarkdown,
+  mode: "focused",
+  metadata: controls
+});
+await reopenedEditor.ready;
+setEditorCursorToEnd(reopenedEditor);
+dispatchEditorKey(reopenedEditor, "keyup", "e");
+await flushEditorUpdates();
+if (reopenedHost.querySelector(".journal-command-menu")) {
+  throw new Error("Persisted escaped slash commands should stay inert after reopening the editor.");
+}
+adapter.destroyJournalEditor(reopenedEditor);
 
 dispatchEditorKey(commandEditor, "keydown", "Enter", { ctrlKey: true });
 if (saveShortcutCount !== 1) {

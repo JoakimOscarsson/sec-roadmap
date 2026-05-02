@@ -7,6 +7,8 @@ import { gfm } from "@milkdown/preset-gfm";
 import { getMarkdown } from "@milkdown/utils";
 
 const activeJournalEditors = new Set();
+// Milkdown serializes `\/` back to `/`; this marker keeps escaped command slashes inert after reopening.
+const commandEscapeMarker = "\u200C";
 
 export function mountJournalEditor(options) {
   const editor = mountMilkdownJournalEditor(options);
@@ -82,12 +84,14 @@ function mountMilkdownJournalEditor({
   const updateHandler = () => {
     window.setTimeout(() => {
       if (destroyed) return;
+      normalizeMilkdownEscapedCommandSlash(editorInstance);
       processCompletedMilkdownTagCommand(editorInstance);
       syncMilkdownCommandMenu(editorInstance);
       if (mode === "inline") resizeMilkdownInlineEditor(root);
     }, 0);
   };
   root.addEventListener("keydown", keydownHandler, true);
+  root.addEventListener("input", updateHandler);
   root.addEventListener("keyup", updateHandler);
   root.addEventListener("mouseup", updateHandler);
   root.addEventListener("focusin", updateHandler);
@@ -135,13 +139,18 @@ function mountMilkdownJournalEditor({
       destroyed = true;
       editorInstance.destroyed = true;
       root.removeEventListener("keydown", keydownHandler, true);
+      root.removeEventListener("input", updateHandler);
       root.removeEventListener("keyup", updateHandler);
       root.removeEventListener("mouseup", updateHandler);
       root.removeEventListener("focusin", updateHandler);
       closeMilkdownCommandMenu(editorInstance);
-      editor.destroy(true).catch((error) => {
-        console.error("Failed to destroy Milkdown journal editor.", error);
-      });
+      window.setTimeout(() => {
+        ready.finally(() => {
+          editor.destroy(true).catch((error) => {
+            console.error("Failed to destroy Milkdown journal editor.", error);
+          });
+        });
+      }, 0);
       root.remove();
     }
   };
@@ -253,6 +262,53 @@ function renderMilkdownCommandMenu(instance) {
 
   instance.state.commandMenu = menu;
   instance.root.append(menu);
+  positionMilkdownCommandMenu(instance, menu);
+}
+
+function positionMilkdownCommandMenu(instance, menu) {
+  const { view } = instance;
+  const range = instance.state.commandRange;
+  if (!view || !range) return;
+
+  let caret;
+  try {
+    caret = view.coordsAtPos(range.to);
+  } catch {
+    return;
+  }
+
+  if (!caret || !Number.isFinite(caret.top) || !Number.isFinite(caret.bottom)) return;
+
+  const gap = 7;
+  const edgePadding = 6;
+  const rootRect = instance.root.getBoundingClientRect();
+  const rootScrollTop = instance.root.scrollTop || 0;
+  const menuHeight = menu.offsetHeight || Math.min(menu.scrollHeight || 230, 230);
+  const visibleHeight = instance.root.clientHeight || rootRect.height || 0;
+  const lineTop = caret.top - rootRect.top + rootScrollTop;
+  const lineBottom = caret.bottom - rootRect.top + rootScrollTop;
+  const belowTop = lineBottom + gap;
+
+  if (!visibleHeight || !menuHeight) {
+    menu.style.top = `${Math.max(edgePadding, belowTop)}px`;
+    menu.style.bottom = "auto";
+    return;
+  }
+
+  const visibleTop = rootScrollTop + edgePadding;
+  const visibleBottom = rootScrollTop + visibleHeight - edgePadding;
+  const availableBelow = visibleBottom - belowTop;
+  const availableAbove = lineTop - gap - visibleTop;
+  const placeBelow = availableBelow >= menuHeight || availableBelow >= availableAbove;
+  const sideSpace = placeBelow ? availableBelow : availableAbove;
+  const constrainedHeight = sideSpace > 0 ? Math.min(menuHeight, sideSpace) : menuHeight;
+  const top = placeBelow ? belowTop : lineTop - constrainedHeight - gap;
+
+  menu.style.top = `${Math.round(top)}px`;
+  menu.style.bottom = "auto";
+  if (sideSpace > 0) {
+    menu.style.maxHeight = `${Math.max(72, Math.min(230, sideSpace))}px`;
+  }
 }
 
 function setMilkdownCommandActiveIndex(instance, nextIndex) {
@@ -365,6 +421,32 @@ function completedMilkdownTagCommand(view) {
     };
   }
   return null;
+}
+
+function normalizeMilkdownEscapedCommandSlash(instance) {
+  const { view } = instance;
+  if (!view || !view.state.selection.empty) return false;
+
+  const { state } = view;
+  const { $from } = state.selection;
+  const parentText = $from.parent.textBetween(0, $from.parentOffset, undefined, "\uFFFC");
+  const replacements = [];
+
+  for (let index = 0; index < parentText.length - 1; index += 1) {
+    if (parentText[index] !== "\\" || parentText[index + 1] !== "/") continue;
+    if (index > 0 && !/\s/.test(parentText[index - 1])) continue;
+    replacements.push($from.start() + index);
+  }
+
+  if (!replacements.length) return false;
+
+  let transaction = state.tr;
+  replacements.reverse().forEach((position) => {
+    transaction = transaction.insertText(commandEscapeMarker, position, position + 1);
+  });
+  view.dispatch(transaction);
+  view.focus();
+  return true;
 }
 
 function replaceMilkdownCommandText(instance, value) {

@@ -1,6 +1,7 @@
 function initializeControls() {
   dom.search.value = state.query;
   dom.levelFilter.value = state.level;
+  dom.journalTypeFilter.value = getActiveJournalTypeFilter();
   updateTabButtons();
 }
 
@@ -23,6 +24,10 @@ function bindEvents() {
     state.level = dom.levelFilter.value;
     state.view = state.view === "chapter" || state.view === "track" ? "overview" : state.view;
     render();
+  });
+
+  dom.journalTypeFilter.addEventListener("change", () => {
+    setJournalTypeFilter(dom.journalTypeFilter.value);
   });
 
   dom.guideBtn.addEventListener("click", () => {
@@ -120,6 +125,8 @@ function updateTabButtons() {
     button.classList.toggle("active", tabActive && button.dataset.tab === state.tab);
   });
   dom.levelFilter.disabled = state.view === "review" || state.view === "journal";
+  dom.journalTypeFilter.value = getActiveJournalTypeFilter();
+  dom.journalTypeFilterGroup.hidden = state.view !== "journal";
 }
 
 function updateViewButtons() {

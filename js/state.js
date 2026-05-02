@@ -1,7 +1,18 @@
-const JOURNAL_EXPORT_RANGES = ["7", "14", "30", "90", "180", "365", "all"];
+const DEFAULT_JOURNAL_EXPORT_DAYS = 30;
+const MAX_JOURNAL_EXPORT_DAYS = 3650;
 
 function isValidJournalExportRange(value) {
-  return JOURNAL_EXPORT_RANGES.includes(value);
+  return normalizedJournalExportDays(value) !== null;
+}
+
+function normalizedJournalExportDays(value) {
+  const days = Number(value);
+  if (!Number.isInteger(days) || days < 1 || days > MAX_JOURNAL_EXPORT_DAYS) return null;
+  return days;
+}
+
+function getJournalExportDays() {
+  return normalizedJournalExportDays(state.journalExportRange) || DEFAULT_JOURNAL_EXPORT_DAYS;
 }
 
 function createDefaultState() {

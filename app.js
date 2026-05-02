@@ -4,6 +4,8 @@ const dom = {
   tabButtons: Array.from(document.querySelectorAll("[data-tab]")),
   search: document.getElementById("searchInput"),
   levelFilter: document.getElementById("levelFilter"),
+  journalTypeFilter: document.getElementById("journalTypeFilter"),
+  journalTypeFilterGroup: document.getElementById("journalTypeFilterGroup"),
   progressScope: document.getElementById("progressScope"),
   overallPct: document.getElementById("overallPct"),
   overallBar: document.getElementById("overallBar"),

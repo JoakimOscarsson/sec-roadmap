@@ -1,5 +1,8 @@
 import { defineConfig } from "vite";
 import { readFileSync } from "node:fs";
+import { mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { build as esbuild } from "esbuild";
 
 function buildEntryPlugin() {
   return {
@@ -40,6 +43,20 @@ function auxiliaryClassicScriptsPlugin() {
         type: "asset",
         fileName: "js/pretty-export.js",
         source: readFileSync(new URL("./js/pretty-export.js", import.meta.url), "utf8")
+      });
+    },
+    async writeBundle(options) {
+      const outDir = options.dir || "dist";
+      const outfile = join(outDir, "js", "journal-runtime.js");
+      mkdirSync(dirname(outfile), { recursive: true });
+      await esbuild({
+        entryPoints: [new URL("./js/journal-runtime-entry.js", import.meta.url).pathname],
+        bundle: true,
+        outfile,
+        format: "iife",
+        platform: "browser",
+        target: "es2020",
+        minify: true
       });
     }
   };

@@ -21,6 +21,13 @@ const distPrettyExport = readFileSync(new URL("../dist/js/pretty-export.js", imp
 if (!distPrettyExport.includes("window.prettyExportLoaded")) {
   throw new Error("Built app should emit the lazy PDF export script.");
 }
+const distJournalRuntime = readFileSync(new URL("../dist/js/journal-runtime.js", import.meta.url), "utf8");
+if (!distJournalRuntime.includes("journalRuntimeLoaded")) {
+  throw new Error("Built app should emit the lazy journal runtime script.");
+}
+if (distScript.includes("mountMilkdownJournalEditor")) {
+  throw new Error("Journal editor runtime should stay outside the initial app bundle.");
+}
 const backupSource = readFileSync(new URL("../js/backup.js", import.meta.url), "utf8");
 const journalDataSource = readFileSync(new URL("../js/journal-data.js", import.meta.url), "utf8");
 const prettyExportSource = readFileSync(new URL("../js/pretty-export.js", import.meta.url), "utf8");
@@ -55,7 +62,12 @@ window.trimText = (value, max) => String(value ?? "").slice(0, max);
 window.journalTargetContext = (target) => target.context;
 window.state = { favorites: { "core:1": true }, journal: [], activity: [], journalTypeFilter: "all", journalExportRange: "30" };
 window.isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
-window.isValidJournalExportRange = (value) => ["7", "14", "30", "90", "180", "365", "all"].includes(value);
+window.normalizedJournalExportDays = (value) => {
+  const days = Number(value);
+  return Number.isInteger(days) && days >= 1 && days <= 3650 ? days : null;
+};
+window.isValidJournalExportRange = (value) => window.normalizedJournalExportDays(value) !== null;
+window.getJournalExportDays = () => window.normalizedJournalExportDays(window.state.journalExportRange) || 30;
 window.todayDate = () => "2026-05-02";
 window.dayNumber = (value) => {
   const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -216,9 +228,9 @@ window.state.journalExportRange = "30";
 if (window.getJournalExportTimelineItems().some((item) => item.id === "activity:activity-old")) {
   throw new Error("Journal PDF export ranges should exclude older timeline items.");
 }
-window.state.journalExportRange = "all";
+window.state.journalExportRange = "90";
 if (!window.getJournalExportTimelineItems().some((item) => item.id === "activity:activity-old")) {
-  throw new Error("Journal PDF export should support all-time exports.");
+  throw new Error("Journal PDF export ranges should include items inside the chosen day count.");
 }
 window.state.activity = window.state.activity.filter((item) => item.id !== "activity-old");
 window.state.journalExportRange = "30";

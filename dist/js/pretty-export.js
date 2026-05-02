@@ -1,20 +1,24 @@
 window.prettyExportLoaded = true;
 
-function exportJournalPdf() {
+function exportJournalPdf(days = getJournalExportDays()) {
   if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
 
-  const items = getJournalExportTimelineItems();
-  if (!items.length) {
-    window.alert("No journal items match the current export settings.");
-    return;
-  }
+  loadJournalRuntime()
+    .then(() => {
+      const items = getJournalExportTimelineItems(days);
+      if (!items.length) {
+        window.alert("No journal items match the current export settings.");
+        return;
+      }
 
-  openPrettyPdfWindow({
-    title: "Security Roadmap Journal",
-    filename: `sec-roadmap-journal-${todayDate()}`,
-    meta: journalExportMeta(),
-    body: renderJournalPdfBody(items)
-  });
+      openPrettyPdfWindow({
+        title: "Security Roadmap Journal",
+        filename: `sec-roadmap-journal-${todayDate()}`,
+        meta: journalExportMeta(days),
+        body: renderJournalPdfBody(items)
+      });
+    })
+    .catch((error) => window.alert(error.message));
 }
 
 function exportPlanPdf() {
@@ -34,39 +38,15 @@ function exportPlanPdf() {
   });
 }
 
-function getJournalExportTimelineItems() {
-  const range = getJournalExportRange();
+function getJournalExportTimelineItems(days = getJournalExportDays()) {
   const items = getJournalTimelineItems();
-  if (range === "all") return items;
-
-  const days = Number(range);
   return items.filter((item) => ageInDays(item.date) <= days);
 }
 
-function getJournalExportRange() {
-  return isValidJournalExportRange(state.journalExportRange) ? state.journalExportRange : "30";
-}
-
-function journalExportRangeOptions() {
-  return [
-    { value: "7", label: "7 days" },
-    { value: "14", label: "14 days" },
-    { value: "30", label: "30 days" },
-    { value: "90", label: "90 days" },
-    { value: "180", label: "6 months" },
-    { value: "365", label: "1 year" },
-    { value: "all", label: "All time" }
-  ];
-}
-
-function journalExportRangeLabel() {
-  return journalExportRangeOptions().find((option) => option.value === getJournalExportRange())?.label || "30 days";
-}
-
-function journalExportMeta() {
+function journalExportMeta(days = getJournalExportDays()) {
   const meta = [
     `Generated ${todayDate()}`,
-    `Range: ${journalExportRangeLabel()}`,
+    `Range: ${days} ${days === 1 ? "day" : "days"}`,
     `Types: ${journalTypeLabel(getActiveJournalTypeFilter())}`
   ];
 

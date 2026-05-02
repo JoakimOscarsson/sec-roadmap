@@ -147,32 +147,10 @@ function renderJournalToolbar() {
     openJournalCreate();
   });
   toolbar.append(
-    renderJournalTypeFilter(),
-    renderJournalExportRangeControl(),
     renderPdfExportButton("Export journal as PDF", exportJournalPdf),
     add
   );
   return toolbar;
-}
-
-function renderJournalTypeFilter() {
-  const active = getActiveJournalTypeFilter();
-  const wrapper = element("div", "journal-type-filter");
-  const options = [
-    ["all", "All"],
-    ["notes", "Notes"],
-    ["activity", "Activity"]
-  ];
-
-  options.forEach(([value, label]) => {
-    const button = element("button", active === value ? "active" : "", label);
-    button.type = "button";
-    button.setAttribute("aria-pressed", String(active === value));
-    button.addEventListener("click", () => setJournalTypeFilter(value));
-    wrapper.append(button);
-  });
-
-  return wrapper;
 }
 
 function renderJournalNav() {

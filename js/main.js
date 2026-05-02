@@ -1,12 +1,3 @@
-import {
-  destroyAllJournalEditors,
-  destroyJournalEditor,
-  focusJournalEditor,
-  getJournalEditorMarkdown,
-  mountJournalEditor,
-  resizeJournalEditor
-} from "./journal-editor-adapter.js";
-import { renderJournalMarkdownBody } from "./journal-markdown.js";
 import contentSource from "../content.js?raw";
 import configSource from "./config.js?raw";
 import storageSource from "./storage.js?raw";
@@ -20,6 +11,7 @@ import customDataSource from "./custom-data.js?raw";
 import collectionsSource from "./collections.js?raw";
 import journalDataSource from "./journal-data.js?raw";
 import backupSource from "./backup.js?raw";
+import journalRuntimeLoaderSource from "./journal-runtime-loader.js?raw";
 import prettyExportLoaderSource from "./pretty-export-loader.js?raw";
 import actionsSource from "./actions.js?raw";
 import controlsSource from "./controls.js?raw";
@@ -39,16 +31,6 @@ import renderJournalSource from "./render-journal.js?raw";
 import renderAppSource from "./render-app.js?raw";
 import appSource from "../app.js?raw";
 
-Object.assign(window, {
-  destroyAllJournalEditors,
-  destroyJournalEditor,
-  focusJournalEditor,
-  getJournalEditorMarkdown,
-  mountJournalEditor,
-  resizeJournalEditor,
-  renderJournalMarkdownBody
-});
-
 const legacyScripts = [
   contentSource,
   configSource,
@@ -63,6 +45,7 @@ const legacyScripts = [
   collectionsSource,
   journalDataSource,
   backupSource,
+  journalRuntimeLoaderSource,
   prettyExportLoaderSource,
   actionsSource,
   controlsSource,

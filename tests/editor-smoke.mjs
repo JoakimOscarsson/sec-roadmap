@@ -250,6 +250,21 @@ if (!serialized.includes("# Heading") || !serialized.includes("**bold**") || !se
 
 adapter.destroyJournalEditor(editor);
 
+const inlineHost = document.createElement("div");
+document.body.append(inlineHost);
+const inlineEditor = adapter.mountJournalEditor({
+  element: inlineHost,
+  markdown: Array.from({ length: 40 }, (_, index) => `Line ${index + 1}`).join("\n\n"),
+  mode: "inline"
+});
+await inlineEditor.ready;
+adapter.resizeJournalEditor(inlineEditor);
+const inlineRoot = inlineHost.querySelector(".journal-milkdown-editor.inline");
+if (inlineRoot.style.maxHeight !== "none" || inlineRoot.style.overflowY !== "visible") {
+  throw new Error("Inline journal editors should grow with content instead of creating a nested scroll area.");
+}
+adapter.destroyJournalEditor(inlineEditor);
+
 const rendered = markdown.renderJournalMarkdownBody(serialized);
 if (!rendered.querySelector("h1") || !rendered.querySelector("strong") || !rendered.querySelector("input[type='checkbox']")) {
   throw new Error("Read-only markdown renderer did not render expected elements.");

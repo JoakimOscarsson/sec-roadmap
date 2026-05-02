@@ -554,12 +554,8 @@ function resizeMilkdownInlineEditor(root) {
   const editorBody = root.querySelector(".ProseMirror");
   if (!editorBody) return;
 
-  const viewportBottomPadding = 28;
   const minHeight = 180;
-  const rect = root.getBoundingClientRect();
-  const maxHeight = Math.max(minHeight, window.innerHeight - rect.top - viewportBottomPadding);
-
-  root.style.maxHeight = `${maxHeight}px`;
-  root.style.overflowY = root.scrollHeight > maxHeight ? "auto" : "visible";
+  root.style.maxHeight = "none";
+  root.style.overflowY = "visible";
   editorBody.style.minHeight = `${minHeight}px`;
 }

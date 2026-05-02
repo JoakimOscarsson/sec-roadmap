@@ -296,8 +296,8 @@
   border-width: 0;
   border-radius: 0;
   min-height: 180px;
-  max-height: calc(100vh - 220px);
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .journal-milkdown-editor.inline .ProseMirror {

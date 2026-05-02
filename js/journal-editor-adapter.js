@@ -4,6 +4,7 @@ import { history } from "@milkdown/plugin-history";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { prism, prismConfig } from "@milkdown/plugin-prism";
 import { commonmark } from "@milkdown/preset-commonmark";
+import { TextSelection } from "@milkdown/prose/state";
 import { gfm } from "@milkdown/preset-gfm";
 import { getMarkdown } from "@milkdown/utils";
 import bash from "refractor/bash";
@@ -20,6 +21,7 @@ import yaml from "refractor/yaml";
 const activeJournalEditors = new Set();
 // Milkdown serializes `\/` back to `/`; this marker keeps escaped command slashes inert after reopening.
 const commandEscapeMarker = "\u200C";
+const MILKDOWN_LISTENER_DEBOUNCE_MS = 220;
 
 export function mountJournalEditor(options) {
   const editor = mountMilkdownJournalEditor(options);
@@ -165,7 +167,7 @@ function mountMilkdownJournalEditor({
             console.error("Failed to destroy Milkdown journal editor.", error);
           });
         });
-      }, 0);
+      }, MILKDOWN_LISTENER_DEBOUNCE_MS);
       root.remove();
     }
   };
@@ -200,6 +202,12 @@ function handleMilkdownCommandKeydown(instance, event) {
   if (!instance.view) return false;
   if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) return false;
 
+  if (event.key === "Enter" && event.shiftKey && exitMilkdownCodeBlock(instance)) {
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
+  }
+
   if (event.key === "Escape" && instance.state.commandMenu) {
     event.preventDefault();
     event.stopPropagation();
@@ -227,6 +235,53 @@ function handleMilkdownCommandKeydown(instance, event) {
   }
 
   return false;
+}
+
+function exitMilkdownCodeBlock(instance) {
+  const { view } = instance;
+  if (!view || !view.state.selection.empty) return false;
+
+  const { state } = view;
+  const { $from } = state.selection;
+  const codeBlock = findMilkdownParentNode($from, (node) => node.type.name === "code_block");
+  if (!codeBlock) return false;
+
+  const paragraphType = state.schema.nodes.paragraph;
+  if (!paragraphType) return false;
+
+  const insertPos = codeBlock.to;
+  const $insert = state.doc.resolve(insertPos);
+  const nextNode = $insert.nodeAfter;
+  if (nextNode?.type === paragraphType) {
+    view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, insertPos + 1)));
+    view.focus();
+    return true;
+  }
+
+  const insertIndex = $insert.index();
+  if (!$insert.parent.canReplaceWith(insertIndex, insertIndex, paragraphType)) return false;
+
+  const paragraph = paragraphType.createAndFill();
+  if (!paragraph) return false;
+
+  const transaction = state.tr.insert(insertPos, paragraph);
+  const selectionPos = insertPos + 1;
+  view.dispatch(transaction.setSelection(TextSelection.create(transaction.doc, selectionPos)));
+  view.focus();
+  return true;
+}
+
+function findMilkdownParentNode($pos, predicate) {
+  for (let depth = $pos.depth; depth > 0; depth -= 1) {
+    const node = $pos.node(depth);
+    if (!predicate(node)) continue;
+    return {
+      node,
+      from: $pos.before(depth),
+      to: $pos.after(depth)
+    };
+  }
+  return null;
 }
 
 function syncMilkdownCommandMenu(instance) {

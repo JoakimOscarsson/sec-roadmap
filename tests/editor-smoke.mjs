@@ -313,6 +313,17 @@ function setEditorCursorToEnd(editor) {
   editor.view.dispatch(state.tr.setSelection(TextSelection.atEnd(state.doc)));
 }
 
+function setEditorCursorInsideFirstCodeBlock(editor) {
+  const { doc } = editor.view.state;
+  let codePosition = null;
+  doc.descendants((node, position) => {
+    if (codePosition !== null || node.type.name !== "code_block") return;
+    codePosition = position + node.nodeSize - 1;
+  });
+  if (codePosition === null) throw new Error("Test editor did not contain a code block.");
+  editor.view.dispatch(editor.view.state.tr.setSelection(TextSelection.create(doc, codePosition)));
+}
+
 const host = document.createElement("div");
 document.body.append(host);
 
@@ -343,6 +354,26 @@ if (!serialized.includes("# Heading") || !serialized.includes("**bold**") || !se
 }
 if (!host.querySelector(".ProseMirror pre .token.keyword") || !host.querySelector(".ProseMirror pre .token.string")) {
   throw new Error("Milkdown code blocks should render Prism syntax highlighting while editing.");
+}
+setEditorCursorInsideFirstCodeBlock(editor);
+dispatchEditorKey(editor, "keydown", "Enter", { shiftKey: true });
+await flushEditorUpdates();
+const afterCodeBlockMarkdown = adapter.getJournalEditorMarkdown(editor);
+if (!afterCodeBlockMarkdown.endsWith("```\n\n")) {
+  throw new Error("Shift+Enter inside a terminal code block should create a paragraph after the code block.");
+}
+if (editor.view.state.selection.$from.parent.type.name !== "paragraph") {
+  throw new Error("Shift+Enter inside a code block should move the cursor into the new paragraph.");
+}
+const childCountAfterCodeExit = editor.view.state.doc.childCount;
+setEditorCursorInsideFirstCodeBlock(editor);
+dispatchEditorKey(editor, "keydown", "Enter", { shiftKey: true });
+await flushEditorUpdates();
+if (editor.view.state.doc.childCount !== childCountAfterCodeExit) {
+  throw new Error("Shift+Enter should reuse an existing paragraph after a code block.");
+}
+if (editor.view.state.selection.$from.parent.type.name !== "paragraph") {
+  throw new Error("Shift+Enter should move the cursor to the existing paragraph after a code block.");
 }
 
 adapter.destroyJournalEditor(editor);

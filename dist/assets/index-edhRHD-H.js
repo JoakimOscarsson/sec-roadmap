@@ -2799,6 +2799,13 @@ function renderJournalEditorLink(controls, key, label) {
 
 function journalCommandOptions(range) {
   const text = range.text;
+
+  const link = text.match(/^\\/link(?:\\s+(.*))?$/i);
+  if (link) return journalLinkCommandOptions(link[1] || "");
+
+  const plan = text.match(/^\\/plan(?:\\s+(.*))?$/i);
+  if (plan) return journalPlanCommandOptions(plan[1] || "");
+
   const command = text.match(/^\\/([a-z]*)$/i);
   if (command) {
     const query = command[1].toLowerCase();
@@ -2811,12 +2818,6 @@ function journalCommandOptions(range) {
     }
     return options;
   }
-
-  const link = text.match(/^\\/link(?:\\s+(.*))?$/i);
-  if (link) return journalLinkCommandOptions(link[1] || "");
-
-  const plan = text.match(/^\\/plan(?:\\s+(.*))?$/i);
-  if (plan) return journalPlanCommandOptions(plan[1] || "");
 
   return [];
 }

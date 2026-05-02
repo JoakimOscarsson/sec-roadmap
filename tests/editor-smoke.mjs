@@ -13,6 +13,7 @@ const distScript = readFileSync(new URL(`../dist/${scriptMatch[1].replace(/^\.\/
 if (distScript.includes("data:text/javascript")) {
   throw new Error("Built app should not dynamically load legacy scripts as external resources.");
 }
+const journalCommandsSource = readFileSync(new URL("../js/journal-commands.js", import.meta.url), "utf8");
 
 const window = new Window({ url: "https://sec-roadmap.test/" });
 globalThis.window = window;
@@ -36,6 +37,36 @@ globalThis.cancelAnimationFrame = window.cancelAnimationFrame.bind(window);
 globalThis.addEventListener = window.addEventListener.bind(window);
 globalThis.removeEventListener = window.removeEventListener.bind(window);
 globalThis.dispatchEvent = window.dispatchEvent.bind(window);
+
+window.plainText = (value) => String(value ?? "");
+window.trimText = (value, max) => String(value ?? "").slice(0, max);
+window.journalTargetContext = (target) => target.context;
+window.state = { favorites: { "core:1": true } };
+window.getJournalLinkTargets = () => [
+  { key: "core:1", itemText: "Identity and access management", context: "Core / Governance" },
+  { key: "custom:1", itemText: "Custom cloud exercise", context: "Custom" }
+];
+window.eval(journalCommandsSource);
+
+const linkTargetOptions = window.journalCommandOptions({ text: "/link" });
+if (!linkTargetOptions.some((option) => option.key === "core:1") || !linkTargetOptions.some((option) => option.key === "custom:1")) {
+  throw new Error("Bare /link should autocomplete link targets.");
+}
+
+const filteredLinkTargetOptions = window.journalCommandOptions({ text: "/link cloud" });
+if (filteredLinkTargetOptions.length !== 1 || filteredLinkTargetOptions[0].key !== "custom:1") {
+  throw new Error("Filtered /link autocomplete should search link targets.");
+}
+
+const planTargetOptions = window.journalCommandOptions({ text: "/plan" });
+if (planTargetOptions.length !== 1 || planTargetOptions[0].key !== "core:1") {
+  throw new Error("Bare /plan should autocomplete only current plan targets.");
+}
+
+const commandOptions = window.journalCommandOptions({ text: "/l" });
+if (!commandOptions.some((option) => option.type === "command" && option.id === "link")) {
+  throw new Error("Partial /l should still autocomplete the /link command.");
+}
 
 const adapter = await import("../js/journal-editor-adapter.js");
 const markdown = await import("../js/journal-markdown.js");

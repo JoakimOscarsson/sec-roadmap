@@ -79,11 +79,16 @@
     <main class="main" id="main"></main>
   </div>
 
-  <script>
-    if (window.location.protocol === "file:" && !window.location.pathname.replace(/\\/g, "/").endsWith("/dist/index.html")) {
+  <script id="source-entry-loader">
+    const localPath = window.location.pathname.replace(/\\/g, "/");
+    if (window.location.protocol === "file:" && !localPath.endsWith("/dist/index.html")) {
       window.location.replace(new URL("./dist/index.html", window.location.href).href);
+    } else if (window.location.protocol !== "file:") {
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "./js/main.js";
+      document.head.append(script);
     }
   </script>
-  <script type="module" src="./js/main.js"></script>
 </body>
 </html>

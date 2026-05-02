@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
 
 const distIndex = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
-if (distIndex.includes('type="module"') || distIndex.includes("modulepreload")) {
+if (distIndex.includes('type="module"') || distIndex.includes("modulepreload") || distIndex.includes("crossorigin")) {
   throw new Error("Built index should use a classic deferred script for file:// compatibility.");
 }
 const scriptMatch = distIndex.match(/<script defer src="(\.\/assets\/[^"]+)"><\/script>/);

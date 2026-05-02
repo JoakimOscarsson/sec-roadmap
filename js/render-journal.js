@@ -31,15 +31,9 @@ function renderJournal() {
     section.append(heading);
 
     const list = element("div", "journal-list");
-    let createItemRendered = false;
     group.items.forEach((entry) => {
-      if (shouldRenderCreateItemBeforeEntry(group, entry, createItemRendered)) {
-        list.append(renderJournalCreateItem());
-        createItemRendered = true;
-      }
       list.append(renderJournalEntry(entry));
     });
-    if (journalGroupIncludesCreateItem(group) && !createItemRendered) list.append(renderJournalCreateItem());
     section.append(list);
     wrapper.append(section);
   });
@@ -129,28 +123,9 @@ function renderJournalNav() {
 }
 
 function getJournalGroupsForRender(entries) {
-  const groups = groupJournalEntries(entries);
-  if (creatingJournalEntry && !groups.some((group) => group.month === todayJournalMonth())) {
-    groups.push({ month: todayJournalMonth(), title: formatJournalMonth(todayJournalMonth()), items: [] });
-  }
-  return groups.sort((left, right) => String(right.month).localeCompare(String(left.month)));
-}
-
-function shouldRenderCreateItemBeforeEntry(group, entry, alreadyRendered) {
-  return creatingJournalEntry
-    && !alreadyRendered
-    && journalGroupIncludesCreateItem(group)
-    && dayNumber(todayDate()) >= dayNumber(entry.date);
-}
-
-function journalGroupIncludesCreateItem(group) {
-  return creatingJournalEntry && group.month === todayJournalMonth();
+  return groupJournalEntries(entries).sort((left, right) => String(right.month).localeCompare(String(left.month)));
 }
 
 function journalGroupDisplayCount(group) {
-  return group.items.length + (journalGroupIncludesCreateItem(group) ? 1 : 0);
-}
-
-function todayJournalMonth() {
-  return todayDate().slice(0, 7);
+  return group.items.length;
 }

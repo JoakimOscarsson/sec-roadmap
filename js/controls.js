@@ -81,7 +81,7 @@ function persistOpenJournalEditors() {
 
 function handleGlobalKeydown(event) {
   if (event.key !== "Enter") return;
-  if (state.view !== "journal" || editingJournalId || creatingJournalEntry) return;
+  if (state.view !== "journal" || editingJournalId) return;
   if (isInteractiveKeyboardTarget(event.target)) return;
 
   event.preventDefault();

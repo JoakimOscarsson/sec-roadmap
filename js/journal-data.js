@@ -53,8 +53,9 @@ function createJournalEntry(data) {
     updatedAt: now,
     ...data
   });
-  if (!entry) return;
+  if (!entry) return null;
   state.journal.push(entry);
+  return entry;
 }
 
 function updateJournalEntry(id, data) {
@@ -74,8 +75,12 @@ function updateJournalEntry(id, data) {
 function deleteJournalEntry(id) {
   const entry = state.journal.find((item) => item.id === id);
   if (!entry || !window.confirm(`Delete "${entry.title}"?`)) return;
-  state.journal = state.journal.filter((item) => item.id !== id);
+  removeJournalEntry(id);
   render();
+}
+
+function removeJournalEntry(id) {
+  state.journal = state.journal.filter((item) => item.id !== id);
 }
 
 function createJournalId() {

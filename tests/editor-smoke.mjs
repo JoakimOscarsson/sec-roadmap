@@ -15,6 +15,7 @@ if (distScript.includes("data:text/javascript")) {
   throw new Error("Built app should not dynamically load legacy scripts as external resources.");
 }
 const journalCommandsSource = readFileSync(new URL("../js/journal-commands.js", import.meta.url), "utf8");
+const renderJournalFormSource = readFileSync(new URL("../js/render-journal-form.js", import.meta.url), "utf8");
 
 const window = new Window({ url: "https://sec-roadmap.test/" });
 globalThis.window = window;
@@ -48,6 +49,7 @@ window.getJournalLinkTargets = () => [
   { key: "custom:1", itemText: "Custom cloud exercise: Lab notes", context: "Custom" }
 ];
 window.eval(journalCommandsSource);
+window.eval(renderJournalFormSource);
 
 const linkTargetOptions = window.journalCommandOptions({ text: "/link" });
 if (!linkTargetOptions.some((option) => option.key === "core:1") || !linkTargetOptions.some((option) => option.key === "custom:1")) {
@@ -128,6 +130,36 @@ const manualSubtitleControls = window.createJournalEditorControls(
 window.addJournalLink(manualSubtitleControls, "custom:1");
 if (manualSubtitle.textContent !== "Manual subtitle" || manualSubtitleControls.subtitleSource !== "manual") {
   throw new Error("A manually specified journal subtitle should not be overwritten by the first link.");
+}
+
+if (!window.isJournalEntryEffectivelyEmpty({
+  title: "Notes",
+  subtitle: "",
+  tags: [],
+  linkedItemKeys: [],
+  body: "  \n\n<br />\n\n&nbsp;\n"
+})) {
+  throw new Error("Whitespace and blank paragraph markers should count as an empty journal entry.");
+}
+
+if (window.isJournalEntryEffectivelyEmpty({
+  title: "Question",
+  subtitle: "",
+  tags: [],
+  linkedItemKeys: [],
+  body: ""
+})) {
+  throw new Error("A custom title should count as journal entry content.");
+}
+
+if (window.isJournalEntryEffectivelyEmpty({
+  title: "Notes",
+  subtitle: "",
+  tags: [],
+  linkedItemKeys: [],
+  body: "Real notes"
+})) {
+  throw new Error("A non-empty body should count as journal entry content.");
 }
 
 const adapter = await import("../js/journal-editor-adapter.js");

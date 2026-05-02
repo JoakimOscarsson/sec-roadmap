@@ -137,7 +137,6 @@ function renderJournalActions(entry) {
 
 function openJournalFocusedEdit(entryId) {
   editingJournalId = entryId;
-  creatingJournalEntry = false;
   render();
   dom.main.scrollIntoView({ block: "start" });
 }

@@ -1,22 +1,32 @@
 let editingJournalId = "";
-let creatingJournalEntry = false;
+let pendingJournalFocusId = "";
 const JOURNAL_AUTOSAVE_DELAY_MS = 2000;
 const journalInlineEditorControls = new Map();
 const journalInlineAutosaveTimers = new Map();
 
 function openJournalCreate() {
+  saveJournalInlineEditors();
   editingJournalId = "";
-  creatingJournalEntry = true;
+  const entry = createJournalEntry({
+    title: "Notes",
+    subtitle: "",
+    subtitleSource: "",
+    date: todayDate(),
+    type: JOURNAL_TYPES[0],
+    linkedItemKeys: [],
+    tags: [],
+    body: ""
+  });
+  if (!entry) return;
+  expandedJournalIds = new Set([entry.id]);
+  pendingJournalFocusId = entry.id;
   render();
-  if (typeof document.querySelector === "function") {
-    document.querySelector(".journal-create-card")?.scrollIntoView({ block: "nearest" });
-  }
+  document.querySelector(`[data-journal-id="${entry.id}"]`)?.scrollIntoView({ block: "nearest" });
 }
 
 function closeJournalEditor() {
   destroyAllJournalEditors();
   editingJournalId = "";
-  creatingJournalEntry = false;
   render();
 }
 
@@ -73,12 +83,6 @@ function renderJournalForm() {
   return overlay;
 }
 
-function renderJournalCreateItem() {
-  if (!creatingJournalEntry) return null;
-
-  return renderJournalInlineEditor(null, "journal-create-card");
-}
-
 function renderJournalExpansionEditor(entry, header = {}) {
   const wrapper = element("div", "journal-expanded-editor");
   const title = document.createElement("input");
@@ -106,69 +110,13 @@ function renderJournalExpansionEditor(entry, header = {}) {
   const links = renderJournalEditorLinks(controls);
   controls.onMetadataChange = () => scheduleJournalInlineAutosave(entry.id, controls);
   wrapper.append(meta, noteWrap, links);
-  setTimeout(() => resizeJournalEditor(controls.editor), 0);
-  return wrapper;
-}
-
-function renderJournalInlineEditor(entry, cardClass) {
-  const card = element("article", `journal-card ${cardClass} expanded`);
-  if (entry) card.dataset.journalId = entry.id;
-  const form = element("form", "journal-inline-editor");
-  const title = document.createElement("input");
-  title.name = "title";
-  title.required = true;
-  title.placeholder = "Entry title";
-  title.className = "journal-title-input journal-inline-title";
-  title.value = entry?.title || "Notes";
-
-  const subtitle = element("div", "journal-editor-subtitle", entry?.subtitle || "");
-  subtitle.hidden = !subtitle.textContent;
-  const date = element("div", "journal-inline-date", formatDate(entry?.date || todayDate()));
-
-  const controls = createJournalEditorControls(entry, title, subtitle);
-  title.addEventListener("keydown", (event) => {
-    if (isSaveShortcut(event)) {
-      event.preventDefault();
-      saveJournalForm(entry, controls);
-      return;
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      focusJournalEditor(controls.editor);
-    }
-  });
-
-  const content = element("div", "journal-inline-content");
-  content.append(title, subtitle, renderJournalEditorMeta(controls));
-  const side = element("div", "journal-row-side journal-inline-side");
-  side.append(date);
-
-  const row = element("div", "journal-row journal-inline-row");
-  row.append(content, side);
-  const noteWrap = element("div", "journal-inline-note-wrap");
-  controls.editor = mountJournalEditor({
-    element: noteWrap,
-    markdown: entry?.body || "",
-    placeholder: "Notes",
-    mode: "inline",
-    metadata: controls,
-    onChange: () => resizeJournalEditor(controls.editor),
-    onKeydown: (event) => handleJournalBodyKeydown(event, form, entry, controls)
-  });
-  noteWrap.append(renderJournalFormActions(entry, controls));
-  form.append(row, noteWrap);
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    saveJournalForm(entry, controls);
-  });
-  form.addEventListener("keydown", handleJournalEditorKeydown);
-  card.append(form);
-
   setTimeout(() => {
-    focusJournalEditor(controls.editor);
     resizeJournalEditor(controls.editor);
+    if (pendingJournalFocusId !== entry.id) return;
+    pendingJournalFocusId = "";
+    focusJournalEditor(controls.editor);
   }, 0);
-  return card;
+  return wrapper;
 }
 
 function handleJournalEditorKeydown(event) {
@@ -203,7 +151,6 @@ function saveJournalForm(entry, controls) {
     editingJournalId = "";
   } else {
     createJournalEntry(data);
-    creatingJournalEntry = false;
   }
   render();
 }
@@ -294,9 +241,17 @@ function handleJournalBodyKeydown(event, form, entry, controls) {
 }
 
 function handleJournalAutosaveBodyKeydown(event, entry, controls) {
-  if (!isSaveShortcut(event)) return;
-  event.preventDefault();
-  saveJournalInlineEditor(entry.id, controls);
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    closeJournalExpandedEditor(entry.id, controls);
+    return;
+  }
+
+  if (isSaveShortcut(event)) {
+    event.preventDefault();
+    saveJournalInlineEditor(entry.id, controls);
+  }
 }
 
 function isSaveShortcut(event) {
@@ -305,4 +260,41 @@ function isSaveShortcut(event) {
 
 function unescapeJournalBody(value) {
   return String(value).replace(/\\\//g, "/");
+}
+
+function closeJournalExpandedEditor(entryId, controls) {
+  clearJournalInlineAutosave(entryId);
+  const entry = state.journal.find((item) => item.id === entryId);
+  if (!entry || !controls) return;
+
+  const data = journalFormData(entry, controls);
+  journalInlineEditorControls.delete(entryId);
+  expandedJournalIds.delete(entryId);
+
+  if (isJournalEntryEffectivelyEmpty(data)) {
+    removeJournalEntry(entryId);
+  } else if (journalEntryDataChanged(entry, data)) {
+    updateJournalEntry(entryId, data);
+  }
+
+  render();
+}
+
+function isJournalEntryEffectivelyEmpty(data) {
+  const title = String(data?.title || "").trim();
+  const hasCustomTitle = title && title !== "Notes";
+  return !hasCustomTitle
+    && !String(data?.subtitle || "").trim()
+    && !uniqueJournalTags(data?.tags || []).length
+    && !uniqueJournalLinks(data?.linkedItemKeys || []).length
+    && !journalBodyHasContent(data?.body || "");
+}
+
+function journalBodyHasContent(body) {
+  const normalized = String(body || "")
+    .replace(/\u200C/g, "")
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/&nbsp;/gi, "")
+    .trim();
+  return Boolean(normalized);
 }

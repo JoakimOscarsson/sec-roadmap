@@ -445,46 +445,6 @@
   pointer-events: auto;
 }
 
-.journal-inline-editor {
-  display: grid;
-  gap: 0;
-}
-
-.journal-inline-row {
-  align-items: center;
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.journal-inline-row .journal-row-side {
-  pointer-events: auto;
-  position: static;
-}
-
-.journal-inline-content {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-  padding: 10px 0 10px 12px;
-}
-
-.journal-inline-title {
-  font-size: 17px;
-  line-height: 1.3;
-}
-
-.journal-inline-date {
-  color: var(--muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.journal-inline-side {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  min-width: auto;
-}
-
 .journal-inline-note-wrap {
   position: relative;
   border-top: 1px solid var(--line);

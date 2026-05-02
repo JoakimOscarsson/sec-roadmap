@@ -234,9 +234,31 @@ if (!window.isJournalEntryEffectivelyEmpty({
   subtitle: "",
   tags: [],
   linkedItemKeys: [],
-  body: "  \n\n<br />\n\n&nbsp;\n"
+  body: "  \n\n<br />\n\n&nbsp;\n\u00a0\u200B"
 })) {
   throw new Error("Whitespace and blank paragraph markers should count as an empty journal entry.");
+}
+
+if (!window.isJournalEntryEffectivelyEmpty({
+  title: "Notes",
+  subtitle: "Custom cloud exercise",
+  subtitleSource: "link",
+  tags: ["review"],
+  linkedItemKeys: ["custom:1"],
+  body: ""
+})) {
+  throw new Error("Inherited journal filter metadata alone should still count as an empty journal entry.");
+}
+
+if (window.isJournalEntryEffectivelyEmpty({
+  title: "Notes",
+  subtitle: "Manual subtitle",
+  subtitleSource: "manual",
+  tags: [],
+  linkedItemKeys: [],
+  body: ""
+})) {
+  throw new Error("A manual journal subtitle should count as journal entry content.");
 }
 
 if (window.isJournalEntryEffectivelyEmpty({

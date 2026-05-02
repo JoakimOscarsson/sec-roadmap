@@ -296,17 +296,17 @@ function closeJournalExpandedEditor(entryId, controls) {
 
 function isJournalEntryEffectivelyEmpty(data) {
   const title = String(data?.title || "").trim();
+  const subtitle = String(data?.subtitle || "").trim();
   const hasCustomTitle = title && title !== "Notes";
+  const hasManualSubtitle = subtitle && data?.subtitleSource !== "link";
   return !hasCustomTitle
-    && !String(data?.subtitle || "").trim()
-    && !uniqueJournalTags(data?.tags || []).length
-    && !uniqueJournalLinks(data?.linkedItemKeys || []).length
+    && !hasManualSubtitle
     && !journalBodyHasContent(data?.body || "");
 }
 
 function journalBodyHasContent(body) {
   const normalized = String(body || "")
-    .replace(/\u200C/g, "")
+    .replace(/[\u00a0\u200B\u200C\u200D\uFEFF]/g, "")
     .replace(/<br\s*\/?>/gi, "")
     .replace(/&nbsp;/gi, "")
     .trim();

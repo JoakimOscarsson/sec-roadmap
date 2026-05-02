@@ -28,6 +28,7 @@ function normalizeJournalEntry(entry) {
     id: entry.id,
     title,
     subtitle: typeof entry.subtitle === "string" ? entry.subtitle.trim() : "",
+    subtitleSource: normalizeJournalSubtitleSource(entry),
     body: typeof entry.body === "string" ? entry.body : "",
     date,
     type,
@@ -36,6 +37,12 @@ function normalizeJournalEntry(entry) {
     createdAt: typeof entry.createdAt === "string" ? entry.createdAt : new Date().toISOString(),
     updatedAt: typeof entry.updatedAt === "string" ? entry.updatedAt : new Date().toISOString()
   };
+}
+
+function normalizeJournalSubtitleSource(entry) {
+  const subtitle = typeof entry?.subtitle === "string" ? entry.subtitle.trim() : "";
+  if (!subtitle) return "";
+  return entry?.subtitleSource === "link" ? "link" : "manual";
 }
 
 function createJournalEntry(data) {

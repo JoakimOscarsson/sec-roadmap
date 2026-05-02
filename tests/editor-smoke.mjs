@@ -45,7 +45,7 @@ window.journalTargetContext = (target) => target.context;
 window.state = { favorites: { "core:1": true } };
 window.getJournalLinkTargets = () => [
   { key: "core:1", itemText: "Identity and access management", context: "Core / Governance" },
-  { key: "custom:1", itemText: "Custom cloud exercise", context: "Custom" }
+  { key: "custom:1", itemText: "Custom cloud exercise: Lab notes", context: "Custom" }
 ];
 window.eval(journalCommandsSource);
 
@@ -98,6 +98,29 @@ if (openedJournalTarget !== "core:1") {
 editorMeta.querySelector(".journal-editor-chip.link").click();
 if (editorControls.linkedItemKeys.length || !editorLinks.hidden) {
   throw new Error("Removing a journal link chip should update the linked-item controls.");
+}
+
+const autoSubtitle = document.createElement("div");
+const autoSubtitleControls = window.createJournalEditorControls(
+  { tags: [], linkedItemKeys: [] },
+  document.createElement("input"),
+  autoSubtitle
+);
+window.addJournalLink(autoSubtitleControls, "custom:1");
+if (autoSubtitle.textContent !== "Custom cloud exercise" || autoSubtitle.hidden || autoSubtitleControls.subtitleSource !== "link") {
+  throw new Error("A first journal link should set an automatic subtitle from the link label prefix.");
+}
+
+const manualSubtitle = document.createElement("div");
+manualSubtitle.textContent = "Manual subtitle";
+const manualSubtitleControls = window.createJournalEditorControls(
+  { subtitle: "Manual subtitle", linkedItemKeys: [] },
+  document.createElement("input"),
+  manualSubtitle
+);
+window.addJournalLink(manualSubtitleControls, "custom:1");
+if (manualSubtitle.textContent !== "Manual subtitle" || manualSubtitleControls.subtitleSource !== "manual") {
+  throw new Error("A manually specified journal subtitle should not be overwritten by the first link.");
 }
 
 const adapter = await import("../js/journal-editor-adapter.js");

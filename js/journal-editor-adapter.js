@@ -374,6 +374,7 @@ function applyMilkdownTextCommand(event, instance, range, target, rawValue) {
   } else {
     instance.controls.subtitle.textContent = value;
     instance.controls.subtitle.hidden = false;
+    instance.controls.subtitleSource = "manual";
   }
 
   removeMilkdownCommandText(instance, range);

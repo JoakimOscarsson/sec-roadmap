@@ -220,9 +220,11 @@ function saveJournalInlineEditor(entryId, controls = journalInlineEditorControls
 }
 
 function journalFormData(entry, controls) {
+  const subtitle = controls.subtitle.textContent.trim();
   return {
     title: controls.title.value.trim() || "Notes",
-    subtitle: controls.subtitle.textContent.trim(),
+    subtitle,
+    subtitleSource: subtitle ? controls.subtitleSource || "" : "",
     date: entry?.date || todayDate(),
     type: entry?.type || JOURNAL_TYPES[0],
     linkedItemKeys: uniqueJournalLinks(controls.linkedItemKeys || []),
@@ -236,6 +238,7 @@ function journalEntryDataChanged(entry, data) {
   const linkedItemKeys = Array.isArray(entry.linkedItemKeys) ? entry.linkedItemKeys : [];
   if ((entry.title || "") !== data.title) return true;
   if ((entry.subtitle || "") !== data.subtitle) return true;
+  if ((entry.subtitleSource || "") !== data.subtitleSource) return true;
   if ((entry.body || "") !== data.body) return true;
   if ((entry.date || "") !== data.date) return true;
   if ((entry.type || "") !== data.type) return true;

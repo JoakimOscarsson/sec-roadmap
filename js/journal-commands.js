@@ -10,6 +10,7 @@ function createJournalEditorControls(entry, title, subtitle) {
   return {
     title,
     subtitle,
+    subtitleSource: journalInitialSubtitleSource(entry),
     tags: uniqueJournalTags(entry?.tags || []),
     linkedItemKeys: uniqueJournalLinks(entry?.linkedItemKeys || []),
     links: null,
@@ -178,7 +179,34 @@ function addJournalTag(controls, tag) {
 
 function addJournalLink(controls, key) {
   if (!key || controls.linkedItemKeys.includes(key)) return;
+  const wasEmpty = !controls.linkedItemKeys.length;
   controls.linkedItemKeys.push(key);
+  if (wasEmpty && controls.linkedItemKeys.length === 1) applyJournalLinkSubtitle(controls, key);
+}
+
+function applyJournalLinkSubtitle(controls, key) {
+  if (!controls.subtitle || controls.subtitleSource === "manual") return;
+
+  const target = getJournalTarget(key);
+  const label = target ? plainText(target.itemText) : key;
+  const subtitle = journalSubtitleFromLinkLabel(label);
+  if (!subtitle) return;
+
+  controls.subtitle.textContent = subtitle;
+  controls.subtitle.hidden = false;
+  controls.subtitleSource = "link";
+}
+
+function journalSubtitleFromLinkLabel(label) {
+  const normalized = String(label || "").trim();
+  const splitLabel = normalized.match(/^([^:]+):\s+.+$/);
+  return splitLabel ? splitLabel[1].trim() : normalized;
+}
+
+function journalInitialSubtitleSource(entry) {
+  const subtitle = typeof entry?.subtitle === "string" ? entry.subtitle.trim() : "";
+  if (!subtitle) return "";
+  return entry?.subtitleSource === "link" ? "link" : "manual";
 }
 
 function isReservedJournalCommand(value) {

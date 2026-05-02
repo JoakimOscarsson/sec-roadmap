@@ -291,6 +291,69 @@
   padding: 0;
 }
 
+.journal-milkdown-editor .ProseMirror .token.comment,
+.journal-milkdown-editor .ProseMirror .token.prolog,
+.journal-milkdown-editor .ProseMirror .token.doctype,
+.journal-milkdown-editor .ProseMirror .token.cdata {
+  color: #8d826e;
+  font-style: italic;
+}
+
+.journal-milkdown-editor .ProseMirror .token.punctuation {
+  color: #6f6655;
+}
+
+.journal-milkdown-editor .ProseMirror .token.property,
+.journal-milkdown-editor .ProseMirror .token.tag,
+.journal-milkdown-editor .ProseMirror .token.boolean,
+.journal-milkdown-editor .ProseMirror .token.number,
+.journal-milkdown-editor .ProseMirror .token.constant,
+.journal-milkdown-editor .ProseMirror .token.symbol,
+.journal-milkdown-editor .ProseMirror .token.deleted {
+  color: #7f4b3a;
+}
+
+.journal-milkdown-editor .ProseMirror .token.selector,
+.journal-milkdown-editor .ProseMirror .token.attr-name,
+.journal-milkdown-editor .ProseMirror .token.string,
+.journal-milkdown-editor .ProseMirror .token.char,
+.journal-milkdown-editor .ProseMirror .token.builtin,
+.journal-milkdown-editor .ProseMirror .token.inserted {
+  color: #5f6f4e;
+}
+
+.journal-milkdown-editor .ProseMirror .token.operator,
+.journal-milkdown-editor .ProseMirror .token.entity,
+.journal-milkdown-editor .ProseMirror .token.url,
+.journal-milkdown-editor .ProseMirror .token.variable {
+  color: #6a5b7c;
+}
+
+.journal-milkdown-editor .ProseMirror .token.atrule,
+.journal-milkdown-editor .ProseMirror .token.attr-value,
+.journal-milkdown-editor .ProseMirror .token.function,
+.journal-milkdown-editor .ProseMirror .token.class-name {
+  color: #84652c;
+}
+
+.journal-milkdown-editor .ProseMirror .token.keyword {
+  color: #3f6671;
+}
+
+.journal-milkdown-editor .ProseMirror .token.regex,
+.journal-milkdown-editor .ProseMirror .token.important {
+  color: #9a5b45;
+}
+
+.journal-milkdown-editor .ProseMirror .token.important,
+.journal-milkdown-editor .ProseMirror .token.bold {
+  font-weight: 600;
+}
+
+.journal-milkdown-editor .ProseMirror .token.italic {
+  font-style: italic;
+}
+
 .journal-milkdown-editor .ProseMirror ul,
 .journal-milkdown-editor .ProseMirror ol {
   margin: 8px 0 10px;

@@ -2,9 +2,20 @@ import { Editor, defaultValueCtx, editorViewCtx, rootCtx } from "@milkdown/core"
 import { clipboard } from "@milkdown/plugin-clipboard";
 import { history } from "@milkdown/plugin-history";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
+import { prism, prismConfig } from "@milkdown/plugin-prism";
 import { commonmark } from "@milkdown/preset-commonmark";
 import { gfm } from "@milkdown/preset-gfm";
 import { getMarkdown } from "@milkdown/utils";
+import bash from "refractor/bash";
+import css from "refractor/css";
+import javascript from "refractor/javascript";
+import json from "refractor/json";
+import markdown from "refractor/markdown";
+import markup from "refractor/markup";
+import python from "refractor/python";
+import sql from "refractor/sql";
+import typescript from "refractor/typescript";
+import yaml from "refractor/yaml";
 
 const activeJournalEditors = new Set();
 // Milkdown serializes `\/` back to `/`; this marker keeps escaped command slashes inert after reopening.
@@ -70,9 +81,13 @@ function mountMilkdownJournalEditor({
     .config((ctx) => {
       ctx.set(rootCtx, root);
       ctx.set(defaultValueCtx, latestMarkdown);
+      ctx.set(prismConfig.key, {
+        configureRefractor: configureJournalPrism
+      });
     })
     .use(commonmark)
     .use(gfm)
+    .use(prism)
     .use(history)
     .use(clipboard)
     .use(listener);
@@ -155,6 +170,30 @@ function mountMilkdownJournalEditor({
     }
   };
   return editorInstance;
+}
+
+function configureJournalPrism(refractor) {
+  [
+    javascript,
+    typescript,
+    json,
+    bash,
+    yaml,
+    python,
+    markup,
+    css,
+    markdown,
+    sql
+  ].forEach((language) => refractor.register(language));
+
+  refractor.alias({
+    javascript: ["js", "mjs", "cjs"],
+    typescript: ["ts"],
+    bash: ["sh", "shell", "zsh"],
+    markup: ["html", "xml", "svg"],
+    markdown: ["md", "mdown"],
+    yaml: ["yml"]
+  });
 }
 
 function handleMilkdownCommandKeydown(instance, event) {

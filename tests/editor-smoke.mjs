@@ -294,20 +294,33 @@ function setEditorCursorToEnd(editor) {
 const host = document.createElement("div");
 document.body.append(host);
 
+const editorMarkdown = [
+  "# Heading",
+  "A **bold** paragraph.",
+  "- [ ] Task",
+  "```js",
+  'const message = "hello";',
+  "console.log(message);",
+  "```"
+].join("\n\n");
 const editor = adapter.mountJournalEditor({
   element: host,
-  markdown: "# Heading\n\nA **bold** paragraph.\n\n- [ ] Task",
+  markdown: editorMarkdown,
   mode: "focused"
 });
 await editor.ready;
+await flushEditorUpdates();
 
 if (!host.querySelector(".ProseMirror")) {
   throw new Error("Milkdown editor did not mount.");
 }
 
 const serialized = adapter.getJournalEditorMarkdown(editor);
-if (!serialized.includes("# Heading") || !serialized.includes("**bold**") || !serialized.includes("[ ] Task")) {
+if (!serialized.includes("# Heading") || !serialized.includes("**bold**") || !serialized.includes("[ ] Task") || !serialized.includes("```js")) {
   throw new Error(`Unexpected serialized markdown: ${serialized}`);
+}
+if (!host.querySelector(".ProseMirror pre .token.keyword") || !host.querySelector(".ProseMirror pre .token.string")) {
+  throw new Error("Milkdown code blocks should render Prism syntax highlighting while editing.");
 }
 
 adapter.destroyJournalEditor(editor);

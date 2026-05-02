@@ -95,9 +95,16 @@ editorLinks.querySelector(".journal-link").click();
 if (openedJournalTarget !== "core:1") {
   throw new Error("Journal linked-item controls should open their roadmap target.");
 }
+let metadataChangeCount = 0;
+editorControls.onMetadataChange = () => {
+  metadataChangeCount += 1;
+};
 editorMeta.querySelector(".journal-editor-chip.link").click();
 if (editorControls.linkedItemKeys.length || !editorLinks.hidden) {
   throw new Error("Removing a journal link chip should update the linked-item controls.");
+}
+if (metadataChangeCount !== 1) {
+  throw new Error("Journal metadata changes should notify autosave scheduling hooks.");
 }
 
 const autoSubtitle = document.createElement("div");

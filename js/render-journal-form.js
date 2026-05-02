@@ -1,6 +1,8 @@
 let editingJournalId = "";
 let creatingJournalEntry = false;
+const JOURNAL_AUTOSAVE_DELAY_MS = 2000;
 const journalInlineEditorControls = new Map();
+const journalInlineAutosaveTimers = new Map();
 
 function openJournalCreate() {
   editingJournalId = "";
@@ -95,12 +97,15 @@ function renderJournalExpansionEditor(entry, header = {}) {
     placeholder: "Notes",
     mode: "inline",
     metadata: controls,
-    onChange: () => resizeJournalEditor(controls.editor),
+    onChange: () => handleJournalInlineEditorChange(entry.id, controls),
     onKeydown: (event) => handleJournalAutosaveBodyKeydown(event, entry, controls)
   });
   journalInlineEditorControls.set(entry.id, controls);
 
-  wrapper.append(renderJournalEditorMeta(controls), noteWrap, renderJournalEditorLinks(controls));
+  const meta = renderJournalEditorMeta(controls);
+  const links = renderJournalEditorLinks(controls);
+  controls.onMetadataChange = () => scheduleJournalInlineAutosave(entry.id, controls);
+  wrapper.append(meta, noteWrap, links);
   setTimeout(() => resizeJournalEditor(controls.editor), 0);
   return wrapper;
 }
@@ -204,7 +209,10 @@ function saveJournalForm(entry, controls) {
 }
 
 function saveJournalInlineEditors() {
-  if (!journalInlineEditorControls.size) return;
+  if (!journalInlineEditorControls.size) {
+    clearJournalInlineAutosaves();
+    return;
+  }
 
   Array.from(journalInlineEditorControls.entries()).forEach(([entryId, controls]) => {
     saveJournalInlineEditor(entryId, controls);
@@ -213,6 +221,7 @@ function saveJournalInlineEditors() {
 }
 
 function saveJournalInlineEditor(entryId, controls = journalInlineEditorControls.get(entryId)) {
+  clearJournalInlineAutosave(entryId);
   const entry = state.journal.find((item) => item.id === entryId);
   if (!entry || !controls) return;
 
@@ -220,6 +229,33 @@ function saveJournalInlineEditor(entryId, controls = journalInlineEditorControls
   if (!journalEntryDataChanged(entry, data)) return;
   updateJournalEntry(entry.id, data);
   saveState();
+}
+
+function handleJournalInlineEditorChange(entryId, controls) {
+  resizeJournalEditor(controls.editor);
+  scheduleJournalInlineAutosave(entryId, controls);
+}
+
+function scheduleJournalInlineAutosave(entryId, controls) {
+  if (!entryId || !controls) return;
+
+  clearJournalInlineAutosave(entryId);
+  const timer = setTimeout(() => {
+    journalInlineAutosaveTimers.delete(entryId);
+    saveJournalInlineEditor(entryId, controls);
+  }, JOURNAL_AUTOSAVE_DELAY_MS);
+  journalInlineAutosaveTimers.set(entryId, timer);
+}
+
+function clearJournalInlineAutosave(entryId) {
+  const timer = journalInlineAutosaveTimers.get(entryId);
+  if (!timer) return;
+  clearTimeout(timer);
+  journalInlineAutosaveTimers.delete(entryId);
+}
+
+function clearJournalInlineAutosaves() {
+  Array.from(journalInlineAutosaveTimers.keys()).forEach(clearJournalInlineAutosave);
 }
 
 function journalFormData(entry, controls) {

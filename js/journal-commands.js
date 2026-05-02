@@ -39,6 +39,7 @@ function refreshJournalEditorMeta(controls) {
   controls.meta.hidden = !controls.tags.length && !controls.linkedItemKeys.length;
   refreshJournalEditorLinks(controls);
   refreshJournalEntryHeader(controls);
+  if (typeof controls.onMetadataChange === "function") controls.onMetadataChange();
 }
 
 function renderJournalEditorTag(controls, tag) {

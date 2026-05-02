@@ -11,6 +11,7 @@ function createDefaultState() {
     query: "",
     level: "all",
     journalLinkFilter: "",
+    journalTagFilter: "",
     selected: {
       core: "",
       specializations: ""
@@ -37,6 +38,7 @@ function normalizeState(saved) {
       query: typeof saved?.query === "string" ? saved.query : "",
       level: ["all", "0", "1", "2", "3"].includes(saved?.level) ? saved.level : "all",
       journalLinkFilter: typeof saved?.journalLinkFilter === "string" ? saved.journalLinkFilter : "",
+      journalTagFilter: typeof saved?.journalTagFilter === "string" ? saved.journalTagFilter : "",
       selected: {
         core: saved?.selected?.core || "",
         specializations: saved?.selected?.specializations || ""

@@ -90,6 +90,26 @@ let openedJournalTarget = "";
 window.openJournalTarget = (key) => {
   openedJournalTarget = key;
 };
+window.todayDate = () => "2026-05-02";
+window.JOURNAL_TYPES = ["note"];
+
+window.getActiveJournalLinkFilter = () => "custom:1";
+window.getActiveJournalTagFilter = () => "review";
+const filteredCreateData = window.journalCreateEntryData();
+if (
+  filteredCreateData.subtitle !== "Custom cloud exercise"
+  || filteredCreateData.subtitleSource !== "link"
+  || filteredCreateData.linkedItemKeys[0] !== "custom:1"
+  || filteredCreateData.tags[0] !== "review"
+) {
+  throw new Error("New journal entries should inherit the active link and tag filters.");
+}
+window.getActiveJournalLinkFilter = () => "";
+window.getActiveJournalTagFilter = () => "";
+const unfilteredCreateData = window.journalCreateEntryData();
+if (unfilteredCreateData.subtitle || unfilteredCreateData.linkedItemKeys.length || unfilteredCreateData.tags.length) {
+  throw new Error("New unfiltered journal entries should not inherit link or tag metadata.");
+}
 
 const editorControls = window.createJournalEditorControls(
   { tags: ["review"], linkedItemKeys: ["core:1"] },

@@ -1,10 +1,12 @@
 function getJournalEntries() {
   const query = state.query.trim().toLowerCase();
   const linkFilter = getActiveJournalLinkFilter();
+  const tagFilter = getActiveJournalTagFilter();
   return state.journal
     .map(normalizeJournalEntry)
     .filter(Boolean)
     .filter((entry) => !linkFilter || entry.linkedItemKeys.includes(linkFilter))
+    .filter((entry) => !tagFilter || journalEntryHasTag(entry, tagFilter))
     .filter((entry) => !query || journalEntrySearchText(entry).includes(query))
     .sort(compareJournalEntries);
 }
@@ -145,6 +147,19 @@ function getActiveJournalLinkFilter() {
   return typeof state.journalLinkFilter === "string" ? state.journalLinkFilter : "";
 }
 
+function getActiveJournalTagFilter() {
+  return typeof state.journalTagFilter === "string" ? state.journalTagFilter.trim() : "";
+}
+
+function journalEntryHasTag(entry, tag) {
+  const normalized = normalizeJournalTagKey(tag);
+  return Boolean(normalized) && (entry.tags || []).some((item) => normalizeJournalTagKey(item) === normalized);
+}
+
+function normalizeJournalTagKey(tag) {
+  return String(tag || "").trim().toLowerCase();
+}
+
 function getJournalLinkCount(key) {
   if (!key) return 0;
   return state.journal
@@ -165,6 +180,21 @@ function openJournalLinkFilter(key) {
 
 function clearJournalLinkFilter() {
   state.journalLinkFilter = "";
+  render();
+}
+
+function openJournalTagFilter(tag) {
+  const normalized = String(tag || "").trim();
+  if (!normalized) return;
+  state.view = "journal";
+  state.journalTagFilter = normalized;
+  state.query = "";
+  if (dom.search) dom.search.value = "";
+  render();
+}
+
+function clearJournalTagFilter() {
+  state.journalTagFilter = "";
   render();
 }
 

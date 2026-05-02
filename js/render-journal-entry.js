@@ -60,12 +60,23 @@ function renderJournalEntryMeta(entry) {
   const tags = entry.tags || [];
   const linkedItemKeys = entry.linkedItemKeys || [];
   const meta = element("div", "journal-entry-meta");
-  tags.forEach((tag) => meta.append(element("span", "journal-entry-tag", tag)));
+  tags.forEach((tag) => meta.append(renderJournalEntryTag(tag)));
   if (linkedItemKeys.length) {
     meta.append(element("span", "journal-entry-link-count", `${linkedItemKeys.length} link${linkedItemKeys.length === 1 ? "" : "s"}`));
   }
   meta.hidden = !tags.length && !linkedItemKeys.length;
   return meta;
+}
+
+function renderJournalEntryTag(tag) {
+  const chip = element("span", "journal-entry-tag", tag);
+  chip.title = `Filter journal by #${tag}`;
+  chip.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openJournalTagFilter(tag);
+  });
+  return chip;
 }
 
 function renderJournalDate(entry) {

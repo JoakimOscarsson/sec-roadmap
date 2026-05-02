@@ -70,6 +70,16 @@
   background: rgba(0, 0, 0, 0.035);
 }
 
+.journal-filters {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.journal-filters .journal-filter {
+  margin-top: 0;
+}
+
 .journal-add {
   appearance: none;
   display: inline-grid;
@@ -430,6 +440,14 @@
 
 .journal-entry-tag::before {
   content: "#";
+}
+
+.journal-entry-tag {
+  cursor: pointer;
+}
+
+.journal-entry-tag:hover {
+  color: var(--text-2);
 }
 
 .journal-row-side {

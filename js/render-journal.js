@@ -6,8 +6,8 @@ function renderJournal() {
   const meta = element("div", "journal-header-meta");
   meta.append(element("p", "path-note", `${entries.length} entries shown.`), renderJournalToolbar());
   header.append(meta);
-  const linkFilter = renderJournalLinkFilter();
-  if (linkFilter) header.append(linkFilter);
+  const filters = renderJournalFilters();
+  if (filters) header.append(filters);
   dom.main.append(header);
 
   const form = renderJournalForm();
@@ -41,35 +41,58 @@ function renderJournal() {
   dom.main.append(wrapper);
 }
 
+function renderJournalFilters() {
+  const filters = [
+    renderJournalLinkFilter(),
+    renderJournalTagFilter()
+  ].filter(Boolean);
+  if (!filters.length) return null;
+
+  const wrapper = element("div", "journal-filters");
+  wrapper.append(...filters);
+  return wrapper;
+}
+
 function renderJournalLinkFilter() {
   const key = getActiveJournalLinkFilter();
   if (!key) return null;
-
   const target = getJournalTarget(key);
-  const wrapper = element("div", "journal-filter");
   const text = target
     ? trimText(plainText(target.itemText), 110)
     : trimText(key, 110);
   const context = target ? journalTargetContext(target) : "Linked item";
+  return renderJournalFilter("Linked to", text, context, "Clear linked item filter", clearJournalLinkFilter);
+}
+
+function renderJournalTagFilter() {
+  const tag = getActiveJournalTagFilter();
+  if (!tag) return null;
+  return renderJournalFilter("Tagged", `#${tag}`, "Journal tag", "Clear tag filter", clearJournalTagFilter);
+}
+
+function renderJournalFilter(kicker, title, context, clearTitle, onClear) {
+  const wrapper = element("div", "journal-filter");
   const label = element("div", "journal-filter-label");
   label.append(
-    element("span", "journal-filter-kicker", "Linked to"),
-    element("span", "journal-filter-title", text),
+    element("span", "journal-filter-kicker", kicker),
+    element("span", "journal-filter-title", title),
     element("span", "journal-filter-context", context)
   );
 
   const clear = element("button", "journal-filter-clear", "×");
   clear.type = "button";
-  clear.title = "Clear linked item filter";
-  clear.setAttribute("aria-label", "Clear linked item filter");
-  clear.addEventListener("click", clearJournalLinkFilter);
+  clear.title = clearTitle;
+  clear.setAttribute("aria-label", clearTitle);
+  clear.addEventListener("click", onClear);
 
   wrapper.append(label, clear);
   return wrapper;
 }
 
 function journalEmptyMessage() {
+  if (getActiveJournalLinkFilter() && getActiveJournalTagFilter()) return "No journal entries match the current journal filters.";
   if (getActiveJournalLinkFilter()) return "No journal entries are linked to this item.";
+  if (getActiveJournalTagFilter()) return "No journal entries match this tag.";
   return state.query.trim() ? "No journal entries match the current search." : "No journal entries yet.";
 }
 

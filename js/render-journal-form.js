@@ -7,21 +7,35 @@ const journalInlineAutosaveTimers = new Map();
 function openJournalCreate() {
   saveJournalInlineEditors();
   editingJournalId = "";
-  const entry = createJournalEntry({
-    title: "Notes",
-    subtitle: "",
-    subtitleSource: "",
-    date: todayDate(),
-    type: JOURNAL_TYPES[0],
-    linkedItemKeys: [],
-    tags: [],
-    body: ""
-  });
+  const entry = createJournalEntry(journalCreateEntryData());
   if (!entry) return;
   expandedJournalIds = new Set([entry.id]);
   pendingJournalFocusId = entry.id;
   render();
   document.querySelector(`[data-journal-id="${entry.id}"]`)?.scrollIntoView({ block: "nearest" });
+}
+
+function journalCreateEntryData() {
+  const linkFilter = getActiveJournalLinkFilter();
+  const tagFilter = getActiveJournalTagFilter();
+  const subtitle = journalCreateSubtitleFromLinkFilter(linkFilter);
+  return {
+    title: "Notes",
+    subtitle,
+    subtitleSource: subtitle ? "link" : "",
+    date: todayDate(),
+    type: JOURNAL_TYPES[0],
+    linkedItemKeys: linkFilter ? [linkFilter] : [],
+    tags: tagFilter ? [tagFilter] : [],
+    body: ""
+  };
+}
+
+function journalCreateSubtitleFromLinkFilter(key) {
+  if (!key) return "";
+  const target = getJournalTarget(key);
+  const label = target ? plainText(target.itemText) : key;
+  return journalSubtitleFromLinkLabel(label);
 }
 
 function closeJournalEditor() {

@@ -250,7 +250,7 @@ function handleJournalAutosaveBodyKeydown(event, entry, controls) {
 
   if (isSaveShortcut(event)) {
     event.preventDefault();
-    saveJournalInlineEditor(entry.id, controls);
+    closeJournalExpandedEditor(entry.id, controls);
   }
 }
 

@@ -3266,7 +3266,7 @@ function handleJournalAutosaveBodyKeydown(event, entry, controls) {
 
   if (isSaveShortcut(event)) {
     event.preventDefault();
-    saveJournalInlineEditor(entry.id, controls);
+    closeJournalExpandedEditor(entry.id, controls);
   }
 }
 
@@ -3464,8 +3464,10 @@ function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
     const nextExpanded = !expandedJournalIds.has(entryId);
     if (nextExpanded) {
       expandedJournalIds.add(entryId);
+      pendingJournalFocusId = entryId;
     } else {
       expandedJournalIds.delete(entryId);
+      if (pendingJournalFocusId === entryId) pendingJournalFocusId = "";
     }
     render();
     return;
@@ -3473,6 +3475,7 @@ function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
 
   const onlyExpandedEntry = expandedJournalIds.size === 1 && expandedJournalIds.has(entryId);
   expandedJournalIds = onlyExpandedEntry ? new Set() : new Set([entryId]);
+  pendingJournalFocusId = onlyExpandedEntry ? "" : entryId;
   render();
 }
 

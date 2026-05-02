@@ -3,13 +3,14 @@ let expandedJournalIds = new Set();
 function renderJournalEntry(entry) {
   const card = element("article", "journal-card");
   const expanded = expandedJournalIds.has(entry.id);
+  const header = {};
   card.dataset.journalId = entry.id;
   card.classList.toggle("expanded", expanded);
-  card.append(renderJournalRow(entry, expanded), renderJournalExpansion(entry, expanded));
+  card.append(renderJournalRow(entry, expanded, header), renderJournalExpansion(entry, expanded, header));
   return card;
 }
 
-function renderJournalRow(entry, expanded) {
+function renderJournalRow(entry, expanded, header = {}) {
   const row = element("div", "journal-row");
   const toggle = element("button", "journal-row-toggle");
   toggle.type = "button";
@@ -21,11 +22,14 @@ function renderJournalRow(entry, expanded) {
 
   const content = element("div", "journal-row-content");
   const title = element("h3", "journal-card-title", entry.title);
-  const subtitle = entry.subtitle ? element("div", "journal-card-subtitle", entry.subtitle) : null;
+  const subtitle = element("div", "journal-card-subtitle", entry.subtitle || "");
+  subtitle.hidden = !entry.subtitle;
   const meta = renderJournalEntryMeta(entry);
+  header.title = title;
+  header.subtitle = subtitle;
+  header.meta = meta;
   content.append(title);
-  if (subtitle) content.append(subtitle);
-  if (meta) content.append(meta);
+  content.append(subtitle, meta);
 
   toggle.append(content);
 
@@ -35,7 +39,7 @@ function renderJournalRow(entry, expanded) {
   return row;
 }
 
-function renderJournalExpansion(entry, expanded) {
+function renderJournalExpansion(entry, expanded, header = {}) {
   const panel = element("div", "journal-expand");
   panel.id = journalPanelId(entry);
   panel.setAttribute("aria-hidden", String(!expanded));
@@ -44,7 +48,7 @@ function renderJournalExpansion(entry, expanded) {
   const inner = element("div", "journal-expand-inner");
   const content = element("div", "journal-expand-content");
   if (expanded) {
-    content.append(renderJournalExpansionEditor(entry));
+    content.append(renderJournalExpansionEditor(entry, header));
   }
 
   inner.append(content);
@@ -55,13 +59,12 @@ function renderJournalExpansion(entry, expanded) {
 function renderJournalEntryMeta(entry) {
   const tags = entry.tags || [];
   const linkedItemKeys = entry.linkedItemKeys || [];
-  if (!tags.length && !linkedItemKeys.length) return null;
-
   const meta = element("div", "journal-entry-meta");
   tags.forEach((tag) => meta.append(element("span", "journal-entry-tag", tag)));
   if (linkedItemKeys.length) {
     meta.append(element("span", "journal-entry-link-count", `${linkedItemKeys.length} link${linkedItemKeys.length === 1 ? "" : "s"}`));
   }
+  meta.hidden = !tags.length && !linkedItemKeys.length;
   return meta;
 }
 

@@ -379,6 +379,7 @@ function applyMilkdownTextCommand(event, instance, range, target, rawValue) {
 
   removeMilkdownCommandText(instance, range);
   closeMilkdownCommandMenu(instance);
+  refreshMilkdownJournalMeta(instance);
   return true;
 }
 

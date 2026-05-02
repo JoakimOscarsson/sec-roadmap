@@ -38,6 +38,7 @@ function refreshJournalEditorMeta(controls) {
   });
   controls.meta.hidden = !controls.tags.length && !controls.linkedItemKeys.length;
   refreshJournalEditorLinks(controls);
+  refreshJournalEntryHeader(controls);
 }
 
 function renderJournalEditorTag(controls, tag) {
@@ -80,6 +81,30 @@ function refreshJournalEditorLinks(controls) {
   controls.links.replaceChildren();
   targets.forEach((target) => controls.links.append(renderJournalEditorOpenLink(target)));
   controls.links.hidden = !targets.length;
+}
+
+function refreshJournalEntryHeader(controls) {
+  if (controls.headerTitle) {
+    controls.headerTitle.textContent = controls.title.value.trim() || "Notes";
+  }
+
+  if (controls.headerSubtitle) {
+    const subtitle = controls.subtitle.textContent.trim();
+    controls.headerSubtitle.textContent = subtitle;
+    controls.headerSubtitle.hidden = !subtitle;
+  }
+
+  if (!controls.headerMeta) return;
+  controls.headerMeta.replaceChildren();
+  controls.tags.forEach((tag) => controls.headerMeta.append(element("span", "journal-entry-tag", tag)));
+  if (controls.linkedItemKeys.length) {
+    controls.headerMeta.append(element(
+      "span",
+      "journal-entry-link-count",
+      `${controls.linkedItemKeys.length} link${controls.linkedItemKeys.length === 1 ? "" : "s"}`
+    ));
+  }
+  controls.headerMeta.hidden = !controls.tags.length && !controls.linkedItemKeys.length;
 }
 
 function renderJournalEditorOpenLink(target) {

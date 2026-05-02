@@ -200,11 +200,18 @@ const commandHost = document.createElement("div");
 document.body.append(commandHost);
 const title = document.createElement("input");
 const subtitle = document.createElement("div");
+const headerTitle = document.createElement("h3");
+const headerSubtitle = document.createElement("div");
+const headerMeta = document.createElement("div");
 const controls = {
+  headerTitle,
+  headerSubtitle,
+  headerMeta,
   title,
   subtitle,
   tags: [],
   linkedItemKeys: [],
+  links: null,
   meta: document.createElement("div")
 };
 
@@ -214,9 +221,6 @@ window.unquoteJournalCommandValue = (value) => {
   return quoted ? quoted[1] : trimmed;
 };
 window.isReservedJournalCommand = (value) => ["tag", "link", "plan", "title", "t", "subtitle", "st"].includes(String(value).toLowerCase());
-window.addJournalTag = (targetControls, tag) => targetControls.tags.push(tag);
-window.addJournalLink = (targetControls, key) => targetControls.linkedItemKeys.push(key);
-window.refreshJournalEditorMeta = () => {};
 window.journalCommandOptions = (range) => {
   if (/^\/link/i.test(range.text)) {
     return [{ type: "link", key: "core:1", label: "Core item", detail: "Core" }];
@@ -245,6 +249,9 @@ await flushEditorUpdates();
 if (title.value !== "Weekly focus" || adapter.getJournalEditorMarkdown(commandEditor).includes("/title")) {
   throw new Error("Title slash command did not update metadata cleanly.");
 }
+if (headerTitle.textContent !== "Weekly focus") {
+  throw new Error("Title slash command should update the journal row header immediately.");
+}
 
 insertEditorText(commandEditor, "/st Review queue");
 dispatchEditorKey(commandEditor, "keydown", "Enter");
@@ -252,12 +259,18 @@ await flushEditorUpdates();
 if (subtitle.textContent !== "Review queue" || subtitle.hidden) {
   throw new Error("Subtitle slash command did not update metadata cleanly.");
 }
+if (headerSubtitle.textContent !== "Review queue" || headerSubtitle.hidden) {
+  throw new Error("Subtitle slash command should update the journal row header immediately.");
+}
 
 insertEditorText(commandEditor, '/"multi word tag"');
 dispatchEditorKey(commandEditor, "keyup", '"');
 await flushEditorUpdates();
 if (!controls.tags.includes("multi word tag")) {
   throw new Error("Quoted tag slash command did not update metadata.");
+}
+if (!headerMeta.querySelector(".journal-entry-tag") || !headerMeta.textContent.includes("multi word tag")) {
+  throw new Error("Tag slash command should update the journal row header immediately.");
 }
 
 insertEditorText(commandEditor, "/link core");
@@ -274,6 +287,9 @@ dispatchEditorKey(commandEditor, "keydown", "Enter");
 await flushEditorUpdates();
 if (!controls.linkedItemKeys.includes("core:1")) {
   throw new Error("Link slash command did not update linked item metadata.");
+}
+if (!headerMeta.textContent.includes("1 link")) {
+  throw new Error("Link slash command should update the journal row header immediately.");
 }
 
 insertEditorText(commandEditor, "\\/Escape");

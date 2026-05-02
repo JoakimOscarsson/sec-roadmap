@@ -77,7 +77,7 @@ function renderJournalCreateItem() {
   return renderJournalInlineEditor(null, "journal-create-card");
 }
 
-function renderJournalExpansionEditor(entry) {
+function renderJournalExpansionEditor(entry, header = {}) {
   const wrapper = element("div", "journal-expanded-editor");
   const title = document.createElement("input");
   title.value = entry?.title || "Notes";
@@ -85,6 +85,9 @@ function renderJournalExpansionEditor(entry) {
   subtitle.hidden = true;
 
   const controls = createJournalEditorControls(entry, title, subtitle);
+  controls.headerTitle = header.title || null;
+  controls.headerSubtitle = header.subtitle || null;
+  controls.headerMeta = header.meta || null;
   const noteWrap = element("div", "journal-inline-note-wrap journal-expanded-note-wrap");
   controls.editor = mountJournalEditor({
     element: noteWrap,

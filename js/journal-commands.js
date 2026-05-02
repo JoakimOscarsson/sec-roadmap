@@ -1,6 +1,9 @@
 const JOURNAL_COMMANDS = [
   { id: "title", aliases: ["t"], label: "/title", detail: "Set note title" },
   { id: "subtitle", aliases: ["st", "substitle"], label: "/subtitle", detail: "Set note subtitle" },
+  { id: "clear-subtitle", label: "/clear-subtitle", detail: "Clear note subtitle" },
+  { id: "clear-links", label: "/clear-links", detail: "Remove all linked items" },
+  { id: "clear-tags", label: "/clear-tags", detail: "Remove all tags" },
   { id: "tag", label: "/tag", detail: "Add the next word as a tag" },
   { id: "link", label: "/link", detail: "Link a roadmap item" },
   { id: "plan", label: "/plan", detail: "Link an item from your current plan" }
@@ -28,7 +31,9 @@ function renderJournalEditorMeta(controls) {
 function refreshJournalEditorMeta(controls) {
   if (!controls.meta) return;
 
+  const subtitle = journalEditorSubtitleText(controls);
   controls.meta.replaceChildren();
+  if (subtitle) controls.meta.append(renderJournalEditorSubtitle(controls, subtitle));
   controls.tags.forEach((tag) => controls.meta.append(renderJournalEditorTag(controls, tag)));
   controls.linkedItemKeys.forEach((key) => {
     const target = getJournalTarget(key);
@@ -36,10 +41,22 @@ function refreshJournalEditorMeta(controls) {
     const context = target ? journalTargetContext(target) : "Linked item";
     controls.meta.append(renderJournalEditorLink(controls, key, label, context));
   });
-  controls.meta.hidden = !controls.tags.length && !controls.linkedItemKeys.length;
+  controls.meta.hidden = !subtitle && !controls.tags.length && !controls.linkedItemKeys.length;
   refreshJournalEditorLinks(controls);
   refreshJournalEntryHeader(controls);
   if (typeof controls.onMetadataChange === "function") controls.onMetadataChange();
+}
+
+function renderJournalEditorSubtitle(controls, subtitle) {
+  const chip = element("button", "journal-editor-chip subtitle", `Subtitle: ${trimText(subtitle, 54)}`);
+  chip.type = "button";
+  chip.title = "Clear subtitle";
+  chip.setAttribute("aria-label", "Clear subtitle");
+  chip.addEventListener("click", () => {
+    clearJournalSubtitle(controls);
+    refreshJournalEditorMeta(controls);
+  });
+  return chip;
 }
 
 function renderJournalEditorTag(controls, tag) {
@@ -132,7 +149,7 @@ function journalCommandOptions(range) {
   const plan = text.match(/^\/plan(?:\s+(.*))?$/i);
   if (plan) return journalPlanCommandOptions(plan[1] || "");
 
-  const command = text.match(/^\/([a-z]*)$/i);
+  const command = text.match(/^\/([a-z-]*)$/i);
   if (command) {
     const query = command[1].toLowerCase();
     const options = JOURNAL_COMMANDS
@@ -210,6 +227,23 @@ function addJournalLink(controls, key) {
   if (wasEmpty && controls.linkedItemKeys.length === 1) applyJournalLinkSubtitle(controls, key);
 }
 
+function clearJournalSubtitle(controls) {
+  if (!controls?.subtitle) return;
+  controls.subtitle.textContent = "";
+  controls.subtitle.hidden = true;
+  controls.subtitleSource = "";
+}
+
+function clearJournalLinks(controls) {
+  if (!controls) return;
+  controls.linkedItemKeys = [];
+}
+
+function clearJournalTags(controls) {
+  if (!controls) return;
+  controls.tags = [];
+}
+
 function applyJournalLinkSubtitle(controls, key) {
   if (!controls.subtitle || controls.subtitleSource === "manual") return;
 
@@ -227,6 +261,10 @@ function journalSubtitleFromLinkLabel(label) {
   const normalized = String(label || "").trim();
   const splitLabel = normalized.match(/^([^:]+):\s+.+$/);
   return splitLabel ? splitLabel[1].trim() : normalized;
+}
+
+function journalEditorSubtitleText(controls) {
+  return controls.subtitle?.textContent.trim() || "";
 }
 
 function journalInitialSubtitleSource(entry) {

@@ -328,6 +328,9 @@ function selectMilkdownCommandOption(instance, option) {
   if (!option) return;
 
   if (option.type === "command") {
+    if (applyMilkdownClearCommand(instance, option.id, instance.state.commandRange)) {
+      return;
+    }
     replaceMilkdownCommandText(instance, `/${option.id} `);
     instance.state.dismissedCommand = "";
     window.setTimeout(() => syncMilkdownCommandMenu(instance), 0);
@@ -359,6 +362,12 @@ function applyMilkdownLineCommandOnEnter(instance, event) {
   const subtitle = range.text.match(/^\/(?:st|subtitle|substitle)\s+(.+)$/i);
   if (subtitle) return applyMilkdownTextCommand(event, instance, range, "subtitle", subtitle[1]);
 
+  const clear = range.text.match(/^\/(clear-subtitle|clear-links|clear-tags)\s*$/i);
+  if (clear) {
+    event.preventDefault();
+    return applyMilkdownClearCommand(instance, clear[1], range);
+  }
+
   return false;
 }
 
@@ -375,6 +384,26 @@ function applyMilkdownTextCommand(event, instance, range, target, rawValue) {
     instance.controls.subtitle.textContent = value;
     instance.controls.subtitle.hidden = false;
     instance.controls.subtitleSource = "manual";
+  }
+
+  removeMilkdownCommandText(instance, range);
+  closeMilkdownCommandMenu(instance);
+  refreshMilkdownJournalMeta(instance);
+  return true;
+}
+
+function applyMilkdownClearCommand(instance, rawCommand, range) {
+  if (!instance.controls) return false;
+
+  const command = String(rawCommand || "").toLowerCase();
+  if (command === "clear-subtitle" && typeof window.clearJournalSubtitle === "function") {
+    window.clearJournalSubtitle(instance.controls);
+  } else if (command === "clear-links" && typeof window.clearJournalLinks === "function") {
+    window.clearJournalLinks(instance.controls);
+  } else if (command === "clear-tags" && typeof window.clearJournalTags === "function") {
+    window.clearJournalTags(instance.controls);
+  } else {
+    return false;
   }
 
   removeMilkdownCommandText(instance, range);

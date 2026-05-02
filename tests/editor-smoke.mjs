@@ -70,6 +70,14 @@ const commandOptions = window.journalCommandOptions({ text: "/l" });
 if (!commandOptions.some((option) => option.type === "command" && option.id === "link")) {
   throw new Error("Partial /l should still autocomplete the /link command.");
 }
+const clearCommandOptions = window.journalCommandOptions({ text: "/clear" });
+if (
+  !clearCommandOptions.some((option) => option.type === "command" && option.id === "clear-subtitle")
+  || !clearCommandOptions.some((option) => option.type === "command" && option.id === "clear-links")
+  || !clearCommandOptions.some((option) => option.type === "command" && option.id === "clear-tags")
+) {
+  throw new Error("Partial /clear should autocomplete all journal clear commands.");
+}
 
 window.element = (tag, className, text) => {
   const node = document.createElement(tag);
@@ -130,6 +138,33 @@ const manualSubtitleControls = window.createJournalEditorControls(
 window.addJournalLink(manualSubtitleControls, "custom:1");
 if (manualSubtitle.textContent !== "Manual subtitle" || manualSubtitleControls.subtitleSource !== "manual") {
   throw new Error("A manually specified journal subtitle should not be overwritten by the first link.");
+}
+const manualSubtitleMeta = window.renderJournalEditorMeta(manualSubtitleControls);
+const manualSubtitleChip = manualSubtitleMeta.querySelector(".journal-editor-chip.subtitle");
+if (!manualSubtitleChip) {
+  throw new Error("Manual journal subtitles should expose a clear control.");
+}
+manualSubtitleChip.click();
+if (
+  manualSubtitle.textContent
+  || !manualSubtitle.hidden
+  || manualSubtitleControls.subtitleSource
+  || manualSubtitleMeta.hidden
+  || !manualSubtitleMeta.querySelector(".journal-editor-chip.link")
+) {
+  throw new Error("Clearing a journal subtitle should remove the subtitle without removing other metadata.");
+}
+const subtitleOnly = document.createElement("div");
+subtitleOnly.textContent = "Only subtitle";
+const subtitleOnlyControls = window.createJournalEditorControls(
+  { subtitle: "Only subtitle", linkedItemKeys: [], tags: [] },
+  document.createElement("input"),
+  subtitleOnly
+);
+const subtitleOnlyMeta = window.renderJournalEditorMeta(subtitleOnlyControls);
+subtitleOnlyMeta.querySelector(".journal-editor-chip.subtitle").click();
+if (!subtitleOnlyMeta.hidden) {
+  throw new Error("Clearing the only journal metadata item should hide the editor metadata row.");
 }
 
 if (!window.isJournalEntryEffectivelyEmpty({
@@ -301,6 +336,15 @@ if (subtitle.textContent !== "Review queue" || subtitle.hidden) {
 if (headerSubtitle.textContent !== "Review queue" || headerSubtitle.hidden) {
   throw new Error("Subtitle slash command should update the journal row header immediately.");
 }
+if (!controls.meta.querySelector(".journal-editor-chip.subtitle")) {
+  throw new Error("Subtitle slash command should expose a clear control.");
+}
+insertEditorText(commandEditor, "/clear-subtitle");
+dispatchEditorKey(commandEditor, "keydown", "Enter");
+await flushEditorUpdates();
+if (subtitle.textContent || !subtitle.hidden || headerSubtitle.textContent || !headerSubtitle.hidden) {
+  throw new Error("/clear-subtitle should update the editor and row header immediately.");
+}
 
 insertEditorText(commandEditor, '/"multi word tag"');
 dispatchEditorKey(commandEditor, "keyup", '"');
@@ -310,6 +354,12 @@ if (!controls.tags.includes("multi word tag")) {
 }
 if (!headerMeta.querySelector(".journal-entry-tag") || !headerMeta.textContent.includes("multi word tag")) {
   throw new Error("Tag slash command should update the journal row header immediately.");
+}
+insertEditorText(commandEditor, "/clear-tags");
+dispatchEditorKey(commandEditor, "keydown", "Enter");
+await flushEditorUpdates();
+if (controls.tags.length || headerMeta.textContent.includes("multi word tag")) {
+  throw new Error("/clear-tags should remove all tags and update the journal row header immediately.");
 }
 
 insertEditorText(commandEditor, "/link core");
@@ -329,6 +379,12 @@ if (!controls.linkedItemKeys.includes("core:1")) {
 }
 if (!headerMeta.textContent.includes("1 link")) {
   throw new Error("Link slash command should update the journal row header immediately.");
+}
+insertEditorText(commandEditor, "/clear-links");
+dispatchEditorKey(commandEditor, "keydown", "Enter");
+await flushEditorUpdates();
+if (controls.linkedItemKeys.length || headerMeta.textContent.includes("1 link")) {
+  throw new Error("/clear-links should remove all linked items and update the journal row header immediately.");
 }
 
 insertEditorText(commandEditor, "\\/Escape");

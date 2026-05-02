@@ -181,6 +181,11 @@
   margin-right: 4px;
 }
 
+.journal-editor-chip.subtitle::before {
+  content: "×";
+  margin-right: 4px;
+}
+
 .journal-editor-chip:hover {
   border-color: var(--accent-soft);
   color: var(--text);

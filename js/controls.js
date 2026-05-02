@@ -55,6 +55,23 @@ function bindEvents() {
     render();
   });
 
+  dom.exportBackupBtn.addEventListener("click", () => {
+    exportRoadmapBackup().catch((error) => {
+      window.alert(`Could not export backup: ${error.message}`);
+    });
+  });
+
+  dom.importBackupBtn.addEventListener("click", () => {
+    dom.importBackupInput.click();
+  });
+
+  dom.importBackupInput.addEventListener("change", () => {
+    const file = dom.importBackupInput.files?.[0];
+    importRoadmapBackupFile(file).finally(() => {
+      dom.importBackupInput.value = "";
+    });
+  });
+
   dom.resetBtn.addEventListener("click", () => {
     if (!window.confirm("Reset progress and plan items?")) return;
     state.checked = {};

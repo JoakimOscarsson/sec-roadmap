@@ -14,6 +14,7 @@ const distScript = readFileSync(new URL(`../dist/${scriptMatch[1].replace(/^\.\/
 if (distScript.includes("data:text/javascript")) {
   throw new Error("Built app should not dynamically load legacy scripts as external resources.");
 }
+const backupSource = readFileSync(new URL("../js/backup.js", import.meta.url), "utf8");
 const journalCommandsSource = readFileSync(new URL("../js/journal-commands.js", import.meta.url), "utf8");
 const renderJournalFormSource = readFileSync(new URL("../js/render-journal-form.js", import.meta.url), "utf8");
 
@@ -48,8 +49,49 @@ window.getJournalLinkTargets = () => [
   { key: "core:1", itemText: "Identity and access management", context: "Core / Governance" },
   { key: "custom:1", itemText: "Custom cloud exercise: Lab notes", context: "Custom" }
 ];
+window.normalizeState = (value) => ({
+  checked: value.checked || {},
+  favorites: value.favorites || {},
+  dates: value.dates || {},
+  reviewComplete: value.reviewComplete || {},
+  portfolio: value.portfolio || {},
+  custom: Array.isArray(value.custom) ? value.custom : [],
+  journal: Array.isArray(value.journal) ? value.journal : [],
+  tab: value.tab || "core",
+  query: value.query || "",
+  level: value.level || "all",
+  journalLinkFilter: value.journalLinkFilter || "",
+  journalTagFilter: value.journalTagFilter || "",
+  selected: value.selected || { core: "", specializations: "" },
+  specializationTrack: value.specializationTrack || "",
+  view: value.view || "overview"
+});
+window.eval(backupSource);
 window.eval(journalCommandsSource);
 window.eval(renderJournalFormSource);
+
+const parsedBackup = window.parseRoadmapBackupPayload(JSON.stringify({
+  schema: "sec-roadmap.user-state",
+  version: 1,
+  state: {
+    checked: { "core:1": 2 },
+    favorites: { "core:1": true },
+    journal: [{ id: "journal-1" }]
+  }
+}));
+if (parsedBackup.state.checked["core:1"] !== 2 || parsedBackup.state.journal.length !== 1) {
+  throw new Error("Roadmap backup parser should extract and normalize wrapped backup state.");
+}
+const parsedRawState = window.parseRoadmapBackupPayload(JSON.stringify({ checked: { "core:2": 1 } }));
+if (parsedRawState.state.checked["core:2"] !== 1) {
+  throw new Error("Roadmap backup parser should accept raw state JSON for migration recovery.");
+}
+try {
+  window.parseRoadmapBackupPayload(JSON.stringify({ schema: "other", state: { checked: {} } }));
+  throw new Error("Roadmap backup parser should reject unknown backup schemas.");
+} catch (error) {
+  if (!/Security Roadmap backup/.test(error.message)) throw error;
+}
 
 const linkTargetOptions = window.journalCommandOptions({ text: "/link" });
 if (!linkTargetOptions.some((option) => option.key === "core:1") || !linkTargetOptions.some((option) => option.key === "custom:1")) {

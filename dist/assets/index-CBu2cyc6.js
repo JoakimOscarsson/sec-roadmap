@@ -1531,7 +1531,122 @@ function formatJournalMonth(month) {
   const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return \`\${names[Number(match[2]) - 1]} \${match[1]}\`;
 }
-`,xE=`function selectChapter(id) {
+`,xE=`const ROADMAP_BACKUP_SCHEMA = "sec-roadmap.user-state";
+const ROADMAP_BACKUP_VERSION = 1;
+
+async function exportRoadmapBackup() {
+  if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
+
+  const snapshot = normalizeState(state);
+  await savePersistedState(snapshot);
+  const payload = {
+    schema: ROADMAP_BACKUP_SCHEMA,
+    version: ROADMAP_BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    app: {
+      name: "sec-roadmap",
+      storageVersion: ROADMAP_DB_VERSION
+    },
+    state: snapshot
+  };
+
+  downloadJsonFile(payload, \`sec-roadmap-backup-\${todayDate()}.json\`);
+}
+
+async function importRoadmapBackupFile(file) {
+  if (!file) return false;
+
+  let backup;
+  try {
+    backup = parseRoadmapBackupPayload(await file.text());
+  } catch (error) {
+    window.alert(\`Could not import backup: \${error.message}\`);
+    return false;
+  }
+
+  const summary = roadmapBackupSummary(backup.state);
+  const confirmed = window.confirm(
+    \`Import this backup and replace current local data?\\n\\n\${summary}\\n\\nThis cannot be undone unless you export the current data first.\`
+  );
+  if (!confirmed) return false;
+
+  if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
+  if (typeof destroyAllJournalEditors === "function") destroyAllJournalEditors();
+  state = backup.state;
+  await savePersistedState(state);
+  initializeControls();
+  render();
+  window.alert("Backup imported.");
+  return true;
+}
+
+function parseRoadmapBackupPayload(text) {
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    throw new Error("the selected file is not valid JSON.");
+  }
+
+  const candidate = extractRoadmapBackupState(payload);
+  if (!isRoadmapStateCandidate(candidate)) {
+    throw new Error("the selected file does not look like a Security Roadmap backup.");
+  }
+
+  return {
+    payload,
+    state: normalizeState(candidate)
+  };
+}
+
+function extractRoadmapBackupState(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.schema === ROADMAP_BACKUP_SCHEMA) return payload.state || null;
+  if (payload.schema) return null;
+  return payload;
+}
+
+function isRoadmapStateCandidate(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  return [
+    "checked",
+    "favorites",
+    "dates",
+    "reviewComplete",
+    "portfolio",
+    "custom",
+    "journal",
+    "tab",
+    "query",
+    "level",
+    "selected",
+    "view"
+  ].some((key) => Object.prototype.hasOwnProperty.call(value, key));
+}
+
+function downloadJsonFile(value, filename) {
+  const blob = new Blob([\`\${JSON.stringify(value, null, 2)}\\n\`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function roadmapBackupSummary(snapshot) {
+  const parts = [
+    \`\${Object.keys(snapshot.checked || {}).length} progress items\`,
+    \`\${Object.keys(snapshot.favorites || {}).length} plan items\`,
+    \`\${Array.isArray(snapshot.custom) ? snapshot.custom.length : 0} custom topics\`,
+    \`\${Array.isArray(snapshot.journal) ? snapshot.journal.length : 0} journal entries\`,
+    \`\${Object.keys(snapshot.portfolio || {}).length} portfolio items\`
+  ];
+  return parts.join("\\n");
+}
+`,CE=`function selectChapter(id) {
   state.selected[state.tab] = id;
   if (state.tab === "specializations") {
     const chapter = roadmap.specializations.find((item) => item.id === id);
@@ -1585,7 +1700,7 @@ function openCustomArea(title) {
   render();
   document.getElementById(customAreaAnchor(title))?.scrollIntoView({ block: "start" });
 }
-`,CE=`function initializeControls() {
+`,AE=`function initializeControls() {
   dom.search.value = state.query;
   dom.levelFilter.value = state.level;
   updateTabButtons();
@@ -1640,6 +1755,23 @@ function bindEvents() {
   dom.sourcesBtn.addEventListener("click", () => {
     state.view = "sources";
     render();
+  });
+
+  dom.exportBackupBtn.addEventListener("click", () => {
+    exportRoadmapBackup().catch((error) => {
+      window.alert(\`Could not export backup: \${error.message}\`);
+    });
+  });
+
+  dom.importBackupBtn.addEventListener("click", () => {
+    dom.importBackupInput.click();
+  });
+
+  dom.importBackupInput.addEventListener("change", () => {
+    const file = dom.importBackupInput.files?.[0];
+    importRoadmapBackupFile(file).finally(() => {
+      dom.importBackupInput.value = "";
+    });
   });
 
   dom.resetBtn.addEventListener("click", () => {
@@ -1700,7 +1832,7 @@ function updateViewButtons() {
   dom.referenceBtn.classList.toggle("active", state.view === "reference");
   dom.sourcesBtn.classList.toggle("active", state.view === "sources");
 }
-`,AE=`function renderFavoriteButton(key, text) {
+`,IE=`function renderFavoriteButton(key, text) {
   const button = element("button", "favorite-btn");
   button.type = "button";
   button.append(renderPinIcon("pin-icon"));
@@ -1842,7 +1974,7 @@ function renderPinIcon(className) {
   \`;
   return icon;
 }
-`,IE=`function renderNav(visible) {
+`,TE=`function renderNav(visible) {
   dom.nav.replaceChildren();
 
   const supportContext = getSupportViewContext();
@@ -2035,7 +2167,7 @@ function supportNavCount(block) {
   const bulletCount = block.lines.filter((line) => /^\\s*[-*]\\s+/.test(line.text)).length;
   return bulletCount ? String(bulletCount) : "";
 }
-`,TE=`function renderHeader(title, description, crumb) {
+`,EE=`function renderHeader(title, description, crumb) {
   const header = element("header", "part-header");
   header.append(element("div", "crumb", crumb), element("h1", "", title));
   if (description) header.append(inlineHtml("p", description));
@@ -2119,7 +2251,7 @@ function renderBlocks(lines, chapter, section, parent, trackItems) {
     parent.append(inlineHtml("p", text));
   });
 }
-`,EE=`function renderOverview(visible) {
+`,DE=`function renderOverview(visible) {
   dom.main.replaceChildren();
 
   const header = renderHeader(tabTitle(), tabIntro(), "Roadmap");
@@ -2248,7 +2380,7 @@ function renderSpecializationTrack(visible) {
 
   dom.main.append(grid);
 }
-`,DE=`function renderChapter(visible) {
+`,ME=`function renderChapter(visible) {
   const chapter = visible.find((item) => item.id === state.selected[state.tab]) || visible[0];
   dom.main.replaceChildren();
 
@@ -2314,7 +2446,7 @@ function renderStudySection(chapter, section) {
   renderBlocks(section.lines, chapter, section, wrapper, true);
   return wrapper;
 }
-`,ME=`function renderPortfolioBlocks(block, parent) {
+`,RE=`function renderPortfolioBlocks(block, parent) {
   let list = null;
 
   const flushList = () => {
@@ -2502,7 +2634,7 @@ function renderFavoriteNav() {
     dom.nav.append(item);
   });
 }
-`,RE=`function renderSupportView(support, crumb, title = support?.title) {
+`,NE=`function renderSupportView(support, crumb, title = support?.title) {
   dom.main.replaceChildren();
   if (!support) {
     dom.main.append(element("p", "empty", "No content loaded."));
@@ -2526,7 +2658,7 @@ function renderFavoriteNav() {
     dom.main.append(section);
   });
 }
-`,NE=`function renderCustom() {
+`,OE=`function renderCustom() {
   dom.main.replaceChildren();
 
   const items = getVisibleCustomItems();
@@ -2662,7 +2794,7 @@ function renderCustomNav() {
     dom.nav.append(item);
   });
 }
-`,OE=`function renderReview() {
+`,PE=`function renderReview() {
   dom.main.replaceChildren();
 
   const buckets = getReviewBuckets();
@@ -2788,7 +2920,7 @@ function renderReviewNav() {
     dom.nav.append(item);
   });
 }
-`,PE=`const JOURNAL_COMMANDS = [
+`,FE=`const JOURNAL_COMMANDS = [
   { id: "title", aliases: ["t"], label: "/title", detail: "Set note title" },
   { id: "subtitle", aliases: ["st", "substitle"], label: "/subtitle", detail: "Set note subtitle" },
   { id: "clear-subtitle", label: "/clear-subtitle", detail: "Clear note subtitle" },
@@ -3084,7 +3216,7 @@ function uniqueJournalTags(tags) {
 function uniqueJournalLinks(keys) {
   return Array.from(new Set(keys.filter((key) => typeof key === "string" && key)));
 }
-`,FE=`let editingJournalId = "";
+`,LE=`let editingJournalId = "";
 let pendingJournalFocusId = "";
 const JOURNAL_AUTOSAVE_DELAY_MS = 2000;
 const journalInlineEditorControls = new Map();
@@ -3398,7 +3530,7 @@ function journalBodyHasContent(body) {
     .trim();
   return Boolean(normalized);
 }
-`,LE=`let expandedJournalIds = new Set();
+`,_E=`let expandedJournalIds = new Set();
 
 function renderJournalEntry(entry) {
   const card = element("article", "journal-card");
@@ -3577,7 +3709,7 @@ function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
 function journalPanelId(entry) {
   return \`journal-entry-\${entry.id}-body\`;
 }
-`,_E=`function renderJournal() {
+`,BE=`function renderJournal() {
   dom.main.replaceChildren();
 
   const entries = getJournalEntries();
@@ -3731,7 +3863,7 @@ function getJournalGroupsForRender(entries) {
 function journalGroupDisplayCount(group) {
   return group.items.length;
 }
-`,BE=`function render() {
+`,zE=`function render() {
   if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
   destroyAllJournalEditors();
 
@@ -3853,7 +3985,7 @@ function renderOverallProgress(visible) {
   dom.overallPct.textContent = \`\${progress.percent}%\`;
   dom.overallBar.style.width = \`\${progress.percent}%\`;
 }
-`,zE=`const markdown = window.ROADMAP_MARKDOWN || "";
+`,jE=`const markdown = window.ROADMAP_MARKDOWN || "";
 
 const dom = {
   tabButtons: Array.from(document.querySelectorAll("[data-tab]")),
@@ -3870,6 +4002,9 @@ const dom = {
   portfolioBtn: document.getElementById("portfolioBtn"),
   referenceBtn: document.getElementById("referenceBtn"),
   sourcesBtn: document.getElementById("sourcesBtn"),
+  exportBackupBtn: document.getElementById("exportBackupBtn"),
+  importBackupBtn: document.getElementById("importBackupBtn"),
+  importBackupInput: document.getElementById("importBackupInput"),
   resetBtn: document.getElementById("resetBtn")
 };
 
@@ -3884,4 +4019,4 @@ async function initializeApp() {
   bindEvents();
   render();
 }
-`;Object.assign(window,{destroyAllJournalEditors:iA,destroyJournalEditor:v0,focusJournalEditor:aA,getJournalEditorMarkdown:oA,mountJournalEditor:rA,resizeJournalEditor:sA,renderJournalMarkdownBody:uE});const jE=[dE,pE,fE,hE,mE,gE,yE,bE,kE,vE,wE,SE,xE,CE,AE,IE,TE,EE,DE,ME,RE,NE,OE,PE,FE,LE,_E,BE,zE];$E().catch(t=>{console.error("Failed to initialize the app.",t)});async function $E(){for(const t of jE)qE(t)}function qE(t){const e=document.createElement("script");e.textContent=t,document.head.append(e)}
+`;Object.assign(window,{destroyAllJournalEditors:iA,destroyJournalEditor:v0,focusJournalEditor:aA,getJournalEditorMarkdown:oA,mountJournalEditor:rA,resizeJournalEditor:sA,renderJournalMarkdownBody:uE});const $E=[dE,pE,fE,hE,mE,gE,yE,bE,kE,vE,wE,SE,xE,CE,AE,IE,TE,EE,DE,ME,RE,NE,OE,PE,FE,LE,_E,BE,zE,jE];qE().catch(t=>{console.error("Failed to initialize the app.",t)});async function qE(){for(const t of $E)HE(t)}function HE(t){const e=document.createElement("script");e.textContent=t,document.head.append(e)}

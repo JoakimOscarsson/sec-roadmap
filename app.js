@@ -15,6 +15,9 @@ const dom = {
   portfolioBtn: document.getElementById("portfolioBtn"),
   referenceBtn: document.getElementById("referenceBtn"),
   sourcesBtn: document.getElementById("sourcesBtn"),
+  exportBackupBtn: document.getElementById("exportBackupBtn"),
+  importBackupBtn: document.getElementById("importBackupBtn"),
+  importBackupInput: document.getElementById("importBackupInput"),
   resetBtn: document.getElementById("resetBtn")
 };
 

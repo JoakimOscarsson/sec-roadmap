@@ -69,6 +69,37 @@ if (!commandOptions.some((option) => option.type === "command" && option.id === 
   throw new Error("Partial /l should still autocomplete the /link command.");
 }
 
+window.element = (tag, className, text) => {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined) node.textContent = text;
+  return node;
+};
+window.getJournalTarget = (key) => window.getJournalLinkTargets().find((target) => target.key === key) || null;
+let openedJournalTarget = "";
+window.openJournalTarget = (key) => {
+  openedJournalTarget = key;
+};
+
+const editorControls = window.createJournalEditorControls(
+  { tags: ["review"], linkedItemKeys: ["core:1"] },
+  document.createElement("input"),
+  document.createElement("div")
+);
+const editorMeta = window.renderJournalEditorMeta(editorControls);
+const editorLinks = window.renderJournalEditorLinks(editorControls);
+if (!editorMeta.querySelector(".journal-editor-chip.link") || !editorLinks.querySelector(".journal-link")) {
+  throw new Error("Journal linked items should render both removable chips and open-target controls.");
+}
+editorLinks.querySelector(".journal-link").click();
+if (openedJournalTarget !== "core:1") {
+  throw new Error("Journal linked-item controls should open their roadmap target.");
+}
+editorMeta.querySelector(".journal-editor-chip.link").click();
+if (editorControls.linkedItemKeys.length || !editorLinks.hidden) {
+  throw new Error("Removing a journal link chip should update the linked-item controls.");
+}
+
 const adapter = await import("../js/journal-editor-adapter.js");
 const markdown = await import("../js/journal-markdown.js");
 

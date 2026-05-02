@@ -97,7 +97,7 @@ function renderJournalExpansionEditor(entry) {
   });
   journalInlineEditorControls.set(entry.id, controls);
 
-  wrapper.append(renderJournalEditorMeta(controls), noteWrap);
+  wrapper.append(renderJournalEditorMeta(controls), noteWrap, renderJournalEditorLinks(controls));
   setTimeout(() => resizeJournalEditor(controls.editor), 0);
   return wrapper;
 }

@@ -12,6 +12,7 @@ function createJournalEditorControls(entry, title, subtitle) {
     subtitle,
     tags: uniqueJournalTags(entry?.tags || []),
     linkedItemKeys: uniqueJournalLinks(entry?.linkedItemKeys || []),
+    links: null,
     meta: null
   };
 }
@@ -31,9 +32,11 @@ function refreshJournalEditorMeta(controls) {
   controls.linkedItemKeys.forEach((key) => {
     const target = getJournalTarget(key);
     const label = target ? plainText(target.itemText) : key;
-    controls.meta.append(renderJournalEditorLink(controls, key, label));
+    const context = target ? journalTargetContext(target) : "Linked item";
+    controls.meta.append(renderJournalEditorLink(controls, key, label, context));
   });
   controls.meta.hidden = !controls.tags.length && !controls.linkedItemKeys.length;
+  refreshJournalEditorLinks(controls);
 }
 
 function renderJournalEditorTag(controls, tag) {
@@ -48,16 +51,49 @@ function renderJournalEditorTag(controls, tag) {
   return chip;
 }
 
-function renderJournalEditorLink(controls, key, label) {
+function renderJournalEditorLink(controls, key, label, context) {
   const chip = element("button", "journal-editor-chip link", trimText(label, 54));
   chip.type = "button";
-  chip.title = `Remove link ${label}`;
-  chip.setAttribute("aria-label", `Remove link ${label}`);
+  chip.title = `Remove link: ${context} / ${label}`;
+  chip.setAttribute("aria-label", `Remove link to ${label}`);
   chip.addEventListener("click", () => {
     controls.linkedItemKeys = controls.linkedItemKeys.filter((item) => item !== key);
     refreshJournalEditorMeta(controls);
   });
   return chip;
+}
+
+function renderJournalEditorLinks(controls) {
+  const wrapper = element("div", "journal-links");
+  controls.links = wrapper;
+  refreshJournalEditorLinks(controls);
+  return wrapper;
+}
+
+function refreshJournalEditorLinks(controls) {
+  if (!controls.links) return;
+
+  const targets = controls.linkedItemKeys
+    .map((key) => getJournalTarget(key))
+    .filter(Boolean);
+  controls.links.replaceChildren();
+  targets.forEach((target) => controls.links.append(renderJournalEditorOpenLink(target)));
+  controls.links.hidden = !targets.length;
+}
+
+function renderJournalEditorOpenLink(target) {
+  const button = element("button", "journal-link");
+  const context = journalTargetContext(target);
+  const label = plainText(target.itemText);
+  button.type = "button";
+  button.title = `Open ${context} / ${label}`;
+  button.setAttribute("aria-label", `Open linked item ${label}`);
+  button.append(
+    element("span", "journal-link-context", trimText(context, 90)),
+    element("span", "journal-link-title", trimText(label, 120))
+  );
+  button.addEventListener("click", () => openJournalTarget(target.key));
+  return button;
 }
 
 function journalCommandOptions(range) {

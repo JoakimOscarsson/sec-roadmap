@@ -45,29 +45,11 @@ function renderJournalExpansion(entry, expanded) {
   const content = element("div", "journal-expand-content");
   if (expanded) {
     content.append(renderJournalExpansionEditor(entry));
-    const links = renderJournalLinks(entry);
-    if (links) content.append(links);
   }
 
   inner.append(content);
   panel.append(inner);
   return panel;
-}
-
-function renderJournalLinks(entry) {
-  const links = entry.linkedItemKeys
-    .map((key) => getJournalTarget(key))
-    .filter(Boolean);
-  if (!links.length) return null;
-
-  const wrapper = element("div", "journal-links");
-  links.forEach((target) => {
-    const button = element("button", "journal-link", trimText(`${journalTargetContext(target)} / ${plainText(target.itemText)}`, 120));
-    button.type = "button";
-    button.addEventListener("click", () => openJournalTarget(target.key));
-    wrapper.append(button);
-  });
-  return wrapper;
 }
 
 function renderJournalEntryMeta(entry) {

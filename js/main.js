@@ -79,8 +79,14 @@ const legacyScripts = [
   appUrl
 ];
 
-for (const scriptUrl of legacyScripts) {
-  await loadLegacyScript(scriptUrl);
+loadLegacyScripts().catch((error) => {
+  console.error("Failed to initialize the app.", error);
+});
+
+async function loadLegacyScripts() {
+  for (const scriptUrl of legacyScripts) {
+    await loadLegacyScript(scriptUrl);
+  }
 }
 
 function loadLegacyScript(src) {

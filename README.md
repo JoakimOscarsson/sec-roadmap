@@ -2,6 +2,16 @@
 
 A static security learning roadmap and study tracker.
 
+## Open
+
+Open the checked-in static build directly:
+
+```text
+dist/index.html
+```
+
+Opening the repository-root `index.html` from the filesystem redirects to `dist/index.html`.
+
 ## Build
 
 Install dependencies once:

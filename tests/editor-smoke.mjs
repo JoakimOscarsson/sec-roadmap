@@ -1,4 +1,13 @@
+import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
+
+const distIndex = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8");
+if (distIndex.includes('type="module"') || distIndex.includes("modulepreload")) {
+  throw new Error("Built index should use a classic deferred script for file:// compatibility.");
+}
+if (!distIndex.includes('<script defer src="./assets/')) {
+  throw new Error("Built index does not reference the bundled app script with a relative file path.");
+}
 
 const window = new Window({ url: "https://sec-roadmap.test/" });
 globalThis.window = window;

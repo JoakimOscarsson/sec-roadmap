@@ -11,6 +11,38 @@ function getJournalEntries() {
     .sort(compareJournalEntries);
 }
 
+function getJournalActivityEvents() {
+  const query = state.query.trim().toLowerCase();
+  const linkFilter = getActiveJournalLinkFilter();
+  const tagFilter = getActiveJournalTagFilter();
+  return (state.activity || [])
+    .map(normalizeJournalActivityEvent)
+    .filter(Boolean)
+    .filter((event) => !linkFilter || journalActivityEventKeys(event).includes(linkFilter))
+    .filter(() => !tagFilter)
+    .filter((event) => !query || journalActivitySearchText(event).includes(query))
+    .sort(compareJournalActivityEvents);
+}
+
+function getJournalTimelineItems() {
+  return [
+    ...getJournalEntries().map((entry) => ({
+      type: "note",
+      id: `note:${entry.id}`,
+      date: entry.date,
+      sortTime: entry.createdAt,
+      entry
+    })),
+    ...getJournalActivityEvents().map((event) => ({
+      type: "activity",
+      id: `activity:${event.id}`,
+      date: event.date,
+      sortTime: event.occurredAt,
+      event
+    }))
+  ].sort(compareJournalTimelineItems);
+}
+
 function normalizeJournalEntry(entry) {
   if (!entry || typeof entry.id !== "string") return null;
 
@@ -38,6 +70,31 @@ function normalizeJournalEntry(entry) {
     tags,
     createdAt: typeof entry.createdAt === "string" ? entry.createdAt : new Date().toISOString(),
     updatedAt: typeof entry.updatedAt === "string" ? entry.updatedAt : new Date().toISOString()
+  };
+}
+
+function normalizeJournalActivityEvent(event) {
+  if (!event || typeof event !== "object" || typeof event.id !== "string") return null;
+
+  const message = typeof event.message === "string" ? event.message.trim() : "";
+  if (!message) return null;
+
+  const occurredAt = typeof event.occurredAt === "string" ? event.occurredAt : new Date().toISOString();
+  const date = isValidDate(event.date) ? event.date : todayDate();
+  const itemKey = typeof event.itemKey === "string" ? event.itemKey : "";
+  const itemKeys = Array.isArray(event.itemKeys)
+    ? event.itemKeys.filter((key) => typeof key === "string" && key)
+    : [];
+
+  return {
+    id: event.id,
+    kind: typeof event.kind === "string" ? event.kind : "activity",
+    message,
+    date,
+    occurredAt,
+    itemKey,
+    itemKeys,
+    context: typeof event.context === "string" ? event.context.trim() : ""
   };
 }
 
@@ -104,6 +161,22 @@ function compareJournalEntries(left, right) {
   return String(right.id).localeCompare(String(left.id));
 }
 
+function compareJournalActivityEvents(left, right) {
+  const dateDiff = dayNumber(right.date) - dayNumber(left.date);
+  if (dateDiff) return dateDiff;
+  const timeDiff = String(right.occurredAt).localeCompare(String(left.occurredAt));
+  if (timeDiff) return timeDiff;
+  return String(right.id).localeCompare(String(left.id));
+}
+
+function compareJournalTimelineItems(left, right) {
+  const dateDiff = dayNumber(right.date) - dayNumber(left.date);
+  if (dateDiff) return dateDiff;
+  const timeDiff = String(right.sortTime || "").localeCompare(String(left.sortTime || ""));
+  if (timeDiff) return timeDiff;
+  return String(right.id).localeCompare(String(left.id));
+}
+
 function journalEntrySearchText(entry) {
   return [
     entry.title,
@@ -114,6 +187,102 @@ function journalEntrySearchText(entry) {
     entry.tags.join(" "),
     ...entry.linkedItemKeys.map((key) => journalTargetSearchText(key))
   ].join(" ").toLowerCase();
+}
+
+function journalActivitySearchText(event) {
+  return [
+    event.message,
+    event.context,
+    event.kind,
+    event.date,
+    ...journalActivityEventKeys(event).map((key) => journalTargetSearchText(key))
+  ].join(" ").toLowerCase();
+}
+
+function journalActivityEventKeys(event) {
+  return Array.from(new Set([
+    event.itemKey,
+    ...(event.itemKeys || [])
+  ].filter(Boolean)));
+}
+
+function createJournalActivityEvent(data) {
+  if (!state.activity || !Array.isArray(state.activity)) state.activity = [];
+  const event = normalizeJournalActivityEvent({
+    id: createJournalActivityId(),
+    occurredAt: new Date().toISOString(),
+    date: todayDate(),
+    ...data
+  });
+  if (!event) return null;
+  state.activity.push(event);
+  return event;
+}
+
+function createJournalActivityId() {
+  return `activity-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function journalActivityTarget(key, fallbackLabel = "") {
+  const target = getJournalTarget(key);
+  if (!target) {
+    return {
+      label: String(fallbackLabel || key).trim(),
+      context: ""
+    };
+  }
+  return {
+    label: plainText(target.itemText).trim(),
+    context: journalTargetContext(target)
+  };
+}
+
+function logJournalLevelChange(key, level, options = {}) {
+  const target = journalActivityTarget(key, options.label);
+  const message = level
+    ? `Set ${target.label} to level ${level}`
+    : `Cleared level for ${target.label}`;
+  return createJournalActivityEvent({
+    kind: "level-change",
+    itemKey: key,
+    message,
+    context: target.context
+  });
+}
+
+function logJournalLevelBatchChange(keys, level, options = {}) {
+  const normalizedKeys = Array.from(new Set((keys || []).filter(Boolean)));
+  if (!normalizedKeys.length) return null;
+  const label = String(options.label || "selected items").trim();
+  const count = normalizedKeys.length;
+  const message = level
+    ? `Set ${count} ${count === 1 ? "item" : "items"} in ${label} to level ${level}`
+    : `Cleared level for ${count} ${count === 1 ? "item" : "items"} in ${label}`;
+  return createJournalActivityEvent({
+    kind: "level-batch",
+    itemKeys: normalizedKeys,
+    message
+  });
+}
+
+function logJournalDateReset(key, level, options = {}) {
+  const target = journalActivityTarget(key, options.label);
+  return createJournalActivityEvent({
+    kind: "level-date-reset",
+    itemKey: key,
+    message: `Updated level ${level} date for ${target.label} to today`,
+    context: target.context
+  });
+}
+
+function logJournalPortfolioComplete(key, options = {}) {
+  const target = journalActivityTarget(key, options.label);
+  return createJournalActivityEvent({
+    kind: "portfolio-complete",
+    itemKey: key,
+    message: `Completed portfolio item: ${target.label}`,
+    context: target.context
+  });
 }
 
 function getJournalLinkTargets() {
@@ -228,6 +397,16 @@ function groupJournalEntries(entries) {
     groups.get(month).push(entry);
   });
   return Array.from(groups, ([month, items]) => ({ month, title: formatJournalMonth(month), items }));
+}
+
+function groupJournalTimelineItems(items) {
+  const groups = new Map();
+  items.forEach((item) => {
+    const month = item.date.slice(0, 7);
+    if (!groups.has(month)) groups.set(month, []);
+    groups.get(month).push(item);
+  });
+  return Array.from(groups, ([month, groupItems]) => ({ month, title: formatJournalMonth(month), items: groupItems }));
 }
 
 function formatJournalMonth(month) {

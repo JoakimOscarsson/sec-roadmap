@@ -23,7 +23,7 @@ function renderChapter(visible) {
   chapterToggle.append(
     renderLevelButton(progress.level, {
       label: `Set study level for ${displayChapterTitle(chapter)}`,
-      onClick: () => setKeysLevel(getChapterKeys(chapter), nextLevel(progress.level))
+      onClick: () => setKeysLevel(getChapterKeys(chapter), nextLevel(progress.level), { label: displayChapterTitle(chapter) })
     }),
     element("span", "", "Chapter level")
   );
@@ -55,7 +55,7 @@ function renderStudySection(chapter, section) {
   label.append(
     renderLevelButton(progress.level, {
       label: `Set study level for ${section.title}`,
-      onClick: () => setKeysLevel(visibleKeys, nextLevel(progress.level))
+      onClick: () => setKeysLevel(visibleKeys, nextLevel(progress.level), { label: section.title })
     }),
     element("span", "", section.title)
   );

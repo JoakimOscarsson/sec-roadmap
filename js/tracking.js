@@ -13,19 +13,28 @@ function cycleKeyLevel(key) {
   setKeyLevel(key, nextLevel(getLevel(key)));
 }
 
-function setKeyLevel(key, level) {
-  if (level > 0) {
-    state.checked[key] = level;
-    updateLevelDate(key, level);
+function setKeyLevel(key, level, options = {}) {
+  const previousLevel = getLevel(key);
+  const normalizedLevel = level >= 1 && level <= 3 ? level : 0;
+  if (normalizedLevel > 0) {
+    state.checked[key] = normalizedLevel;
+    updateLevelDate(key, normalizedLevel);
   } else {
     delete state.checked[key];
   }
+  if (options.log === false || previousLevel === normalizedLevel) return;
+  logJournalLevelChange(key, normalizedLevel, options);
 }
 
-function setKeysLevel(keys, level) {
-  keys.forEach((key) => {
-    setKeyLevel(key, level);
+function setKeysLevel(keys, level, options = {}) {
+  const normalizedKeys = Array.from(new Set((keys || []).filter(Boolean)));
+  const previousLevels = new Map(normalizedKeys.map((key) => [key, getLevel(key)]));
+  normalizedKeys.forEach((key) => {
+    setKeyLevel(key, level, { log: false });
   });
+  const changedKeys = normalizedKeys.filter((key) => previousLevels.get(key) !== getLevel(key));
+  if (options.log === false || !changedKeys.length) return;
+  logJournalLevelBatchChange(changedKeys, getLevel(changedKeys[0]), options);
 }
 
 function isReviewComplete(key) {
@@ -118,11 +127,13 @@ function supportBlockAnchor(crumb, block) {
   return `${crumb.toLowerCase()}-${block.id}`;
 }
 
-function setPortfolioComplete(key, complete, references = []) {
+function setPortfolioComplete(key, complete, references = [], options = {}) {
   if (!state.portfolio || typeof state.portfolio !== "object") state.portfolio = {};
+  const wasComplete = Boolean(state.portfolio[key]);
   if (complete) {
     state.portfolio[key] = true;
-    references.forEach((reference) => setKeyLevel(reference.key, 3));
+    references.forEach((reference) => setKeyLevel(reference.key, 3, { log: false }));
+    if (!wasComplete) logJournalPortfolioComplete(key, options);
   } else {
     delete state.portfolio[key];
   }
@@ -134,9 +145,10 @@ function getLevelDates(key) {
   return dates;
 }
 
-function updateLevelDate(key, level) {
+function updateLevelDate(key, level, options = {}) {
   if (level < 1 || level > 3) return;
   setLevelDate(key, level, todayDate());
+  if (options.log) logJournalDateReset(key, level, options);
 }
 
 function setLevelDate(key, level, value) {

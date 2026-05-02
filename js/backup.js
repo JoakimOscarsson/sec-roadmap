@@ -109,6 +109,7 @@ function roadmapBackupSummary(snapshot) {
     `${Object.keys(snapshot.favorites || {}).length} plan items`,
     `${Array.isArray(snapshot.custom) ? snapshot.custom.length : 0} custom topics`,
     `${Array.isArray(snapshot.journal) ? snapshot.journal.length : 0} journal entries`,
+    `${Array.isArray(snapshot.activity) ? snapshot.activity.length : 0} activity events`,
     `${Object.keys(snapshot.portfolio || {}).length} portfolio items`
   ];
   return parts.join("\n");

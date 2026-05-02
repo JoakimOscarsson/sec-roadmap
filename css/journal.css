@@ -433,6 +433,51 @@
   gap: 8px;
 }
 
+.journal-activity {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+  padding: 4px 8px;
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.journal-activity-line {
+  display: block;
+  width: 1px;
+  min-height: 30px;
+  background: var(--line);
+  justify-self: center;
+}
+
+.journal-activity-content {
+  min-width: 0;
+}
+
+.journal-activity-message {
+  color: var(--text-2);
+}
+
+.journal-activity-context,
+.journal-activity-date {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.journal-activity-context {
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-activity-date {
+  white-space: nowrap;
+  padding-top: 1px;
+}
+
 .journal-card {
   background: transparent;
   border: 1px solid var(--line-soft);

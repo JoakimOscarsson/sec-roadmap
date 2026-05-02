@@ -2,9 +2,11 @@ function renderJournal() {
   dom.main.replaceChildren();
 
   const entries = getJournalEntries();
+  const activity = getJournalActivityEvents();
+  const timeline = getJournalTimelineItems();
   const header = renderHeader("Journal", "Capture study notes, reflections, questions, and practice logs.", "Study");
   const meta = element("div", "journal-header-meta");
-  meta.append(element("p", "path-note", `${entries.length} entries shown.`), renderJournalToolbar());
+  meta.append(element("p", "path-note", journalTimelineCountLabel(entries.length, activity.length)), renderJournalToolbar());
   header.append(meta);
   const filters = renderJournalFilters();
   if (filters) header.append(filters);
@@ -13,7 +15,7 @@ function renderJournal() {
   const form = renderJournalForm();
   if (form) dom.main.append(form);
 
-  const groups = getJournalGroupsForRender(entries);
+  const groups = getJournalGroupsForRender(timeline);
   if (!groups.length) {
     dom.main.append(element("p", "empty", journalEmptyMessage()));
     return;
@@ -31,14 +33,33 @@ function renderJournal() {
     section.append(heading);
 
     const list = element("div", "journal-list");
-    group.items.forEach((entry) => {
-      list.append(renderJournalEntry(entry));
+    group.items.forEach((item) => {
+      list.append(item.type === "activity" ? renderJournalActivityEvent(item.event) : renderJournalEntry(item.entry));
     });
     section.append(list);
     wrapper.append(section);
   });
 
   dom.main.append(wrapper);
+}
+
+function journalTimelineCountLabel(noteCount, activityCount) {
+  const noteLabel = `${noteCount} ${noteCount === 1 ? "note" : "notes"}`;
+  const activityLabel = `${activityCount} ${activityCount === 1 ? "activity event" : "activity events"}`;
+  return `${noteLabel}, ${activityLabel} shown.`;
+}
+
+function renderJournalActivityEvent(event) {
+  const item = element("div", "journal-activity");
+  const content = element("div", "journal-activity-content");
+  content.append(element("div", "journal-activity-message", event.message));
+  if (event.context) content.append(element("div", "journal-activity-context", event.context));
+  item.append(
+    element("span", "journal-activity-line", ""),
+    content,
+    element("time", "journal-activity-date", formatDate(event.date))
+  );
+  return item;
 }
 
 function renderJournalFilters() {
@@ -113,7 +134,7 @@ function renderJournalToolbar() {
 }
 
 function renderJournalNav() {
-  const groups = getJournalGroupsForRender(getJournalEntries());
+  const groups = getJournalGroupsForRender(getJournalTimelineItems());
   if (!groups.length) {
     const item = element("li");
     item.append(element("p", "empty", journalEmptyMessage()));
@@ -146,7 +167,7 @@ function renderJournalNav() {
 }
 
 function getJournalGroupsForRender(entries) {
-  return groupJournalEntries(entries).sort((left, right) => String(right.month).localeCompare(String(left.month)));
+  return groupJournalTimelineItems(entries).sort((left, right) => String(right.month).localeCompare(String(left.month)));
 }
 
 function journalGroupDisplayCount(group) {

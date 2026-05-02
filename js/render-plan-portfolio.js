@@ -46,7 +46,7 @@ function renderPortfolioItem(block, line, text) {
   checkbox.checked = Boolean(state.portfolio?.[key]);
   checkbox.setAttribute("aria-label", `Mark portfolio item complete: ${plainText(itemText)}`);
   checkbox.addEventListener("change", () => {
-    setPortfolioComplete(key, checkbox.checked, references);
+    setPortfolioComplete(key, checkbox.checked, references, { label: plainText(itemText) });
     render();
   });
   const label = element("label", "portfolio-text");
@@ -132,7 +132,7 @@ function renderPortfolioPlanRow(favorite) {
   checkbox.checked = Boolean(state.portfolio?.[favorite.key]);
   checkbox.setAttribute("aria-label", `Mark portfolio item complete: ${plainText(favorite.itemText)}`);
   checkbox.addEventListener("change", () => {
-    setPortfolioComplete(favorite.key, checkbox.checked, favorite.references);
+    setPortfolioComplete(favorite.key, checkbox.checked, favorite.references, { label: plainText(favorite.itemText) });
     render();
   });
   const text = inlineHtml("div", favorite.itemText);

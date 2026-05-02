@@ -15,6 +15,7 @@ if (distScript.includes("data:text/javascript")) {
   throw new Error("Built app should not dynamically load legacy scripts as external resources.");
 }
 const backupSource = readFileSync(new URL("../js/backup.js", import.meta.url), "utf8");
+const journalDataSource = readFileSync(new URL("../js/journal-data.js", import.meta.url), "utf8");
 const journalCommandsSource = readFileSync(new URL("../js/journal-commands.js", import.meta.url), "utf8");
 const renderJournalFormSource = readFileSync(new URL("../js/render-journal-form.js", import.meta.url), "utf8");
 
@@ -44,7 +45,14 @@ globalThis.dispatchEvent = window.dispatchEvent.bind(window);
 window.plainText = (value) => String(value ?? "");
 window.trimText = (value, max) => String(value ?? "").slice(0, max);
 window.journalTargetContext = (target) => target.context;
-window.state = { favorites: { "core:1": true } };
+window.state = { favorites: { "core:1": true }, journal: [], activity: [] };
+window.isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value));
+window.todayDate = () => "2026-05-02";
+window.dayNumber = (value) => {
+  const match = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return Infinity;
+  return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])) / 86400000;
+};
 window.getJournalLinkTargets = () => [
   { key: "core:1", itemText: "Identity and access management", context: "Core / Governance" },
   { key: "custom:1", itemText: "Custom cloud exercise: Lab notes", context: "Custom" }
@@ -57,6 +65,7 @@ window.normalizeState = (value) => ({
   portfolio: value.portfolio || {},
   custom: Array.isArray(value.custom) ? value.custom : [],
   journal: Array.isArray(value.journal) ? value.journal : [],
+  activity: Array.isArray(value.activity) ? value.activity : [],
   tab: value.tab || "core",
   query: value.query || "",
   level: value.level || "all",
@@ -67,8 +76,14 @@ window.normalizeState = (value) => ({
   view: value.view || "overview"
 });
 window.eval(backupSource);
+window.eval(journalDataSource);
 window.eval(journalCommandsSource);
 window.eval(renderJournalFormSource);
+window.journalTargetContext = (target) => target.context;
+window.getJournalLinkTargets = () => [
+  { key: "core:1", itemText: "Identity and access management", context: "Core / Governance" },
+  { key: "custom:1", itemText: "Custom cloud exercise: Lab notes", context: "Custom" }
+];
 
 const parsedBackup = window.parseRoadmapBackupPayload(JSON.stringify({
   schema: "sec-roadmap.user-state",
@@ -132,8 +147,37 @@ let openedJournalTarget = "";
 window.openJournalTarget = (key) => {
   openedJournalTarget = key;
 };
-window.todayDate = () => "2026-05-02";
 window.JOURNAL_TYPES = ["note"];
+
+window.state.activity = [];
+window.state.query = "";
+window.state.journalLinkFilter = "";
+window.state.journalTagFilter = "";
+window.logJournalLevelChange("core:1", 2);
+if (!window.state.activity[0]?.message.includes("level 2")) {
+  throw new Error("Skill level changes should create journal activity events.");
+}
+window.logJournalDateReset("core:1", 2);
+if (!window.state.activity[1]?.message.includes("Updated level 2 date")) {
+  throw new Error("Level date resets should create journal activity events.");
+}
+window.logJournalPortfolioComplete("custom:1");
+if (!window.state.activity[2]?.message.includes("Completed portfolio item")) {
+  throw new Error("Portfolio completion should create journal activity events.");
+}
+if (window.getJournalActivityEvents().length !== 3 || window.getJournalTimelineItems().filter((item) => item.type === "activity").length !== 3) {
+  throw new Error("Journal activity events should be available in the journal timeline.");
+}
+window.state.journalLinkFilter = "core:1";
+if (window.getJournalActivityEvents().length !== 2) {
+  throw new Error("Journal activity events should respect linked-item filters.");
+}
+window.state.journalLinkFilter = "";
+window.state.journalTagFilter = "review";
+if (window.getJournalActivityEvents().length) {
+  throw new Error("Journal activity events should not appear inside tag-filtered note views.");
+}
+window.state.journalTagFilter = "";
 
 window.getActiveJournalLinkFilter = () => "custom:1";
 window.getActiveJournalTagFilter = () => "review";

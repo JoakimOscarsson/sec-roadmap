@@ -51,7 +51,7 @@ function renderNav(visible) {
         label: `Set study level for ${displayChapterTitle(chapter)}`,
         onClick: (event) => {
           event.stopPropagation();
-          setKeysLevel(getChapterKeys(chapter), nextLevel(progress.level));
+          setKeysLevel(getChapterKeys(chapter), nextLevel(progress.level), { label: displayChapterTitle(chapter) });
         }
       }),
       element("span", "nav-title-text", displayChapterTitle(chapter)),
@@ -119,7 +119,7 @@ function renderSpecializationNav(visible) {
         label: `Set study level for ${displayChapterTitle(chapter)}`,
         onClick: (event) => {
           event.stopPropagation();
-          setKeysLevel(getChapterKeys(chapter), nextLevel(progress.level));
+          setKeysLevel(getChapterKeys(chapter), nextLevel(progress.level), { label: displayChapterTitle(chapter) });
         }
       }),
       element("span", "nav-title-text", specializationChapterLabel(chapter)),

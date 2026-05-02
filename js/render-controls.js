@@ -63,7 +63,7 @@ function renderLevelDates(key, text) {
   );
   updateButton.addEventListener("click", () => {
     if (!level) return;
-    updateLevelDate(key, level);
+    updateLevelDate(key, level, { log: true, label: plainText(text) });
     render();
   });
 

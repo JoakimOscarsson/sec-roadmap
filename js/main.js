@@ -7,35 +7,35 @@ import {
   resizeJournalEditor
 } from "./journal-editor-adapter.js";
 import { renderJournalMarkdownBody } from "./journal-markdown.js";
-import contentUrl from "../content.js?url";
-import configUrl from "./config.js?url";
-import storageUrl from "./storage.js?url";
-import domUtilsUrl from "./dom-utils.js?url";
-import markdownParserUrl from "./markdown-parser.js?url";
-import stateUrl from "./state.js?url";
-import roadmapModelUrl from "./roadmap-model.js?url";
-import trackingUrl from "./tracking.js?url";
-import progressUrl from "./progress.js?url";
-import customDataUrl from "./custom-data.js?url";
-import collectionsUrl from "./collections.js?url";
-import journalDataUrl from "./journal-data.js?url";
-import actionsUrl from "./actions.js?url";
-import controlsUrl from "./controls.js?url";
-import renderControlsUrl from "./render-controls.js?url";
-import renderNavUrl from "./render-nav.js?url";
-import renderContentUrl from "./render-content.js?url";
-import renderOverviewsUrl from "./render-overviews.js?url";
-import renderChapterUrl from "./render-chapter.js?url";
-import renderPlanPortfolioUrl from "./render-plan-portfolio.js?url";
-import renderSupportUrl from "./render-support.js?url";
-import renderCustomUrl from "./render-custom.js?url";
-import renderReviewUrl from "./render-review.js?url";
-import journalCommandsUrl from "./journal-commands.js?url";
-import renderJournalFormUrl from "./render-journal-form.js?url";
-import renderJournalEntryUrl from "./render-journal-entry.js?url";
-import renderJournalUrl from "./render-journal.js?url";
-import renderAppUrl from "./render-app.js?url";
-import appUrl from "../app.js?url";
+import contentSource from "../content.js?raw";
+import configSource from "./config.js?raw";
+import storageSource from "./storage.js?raw";
+import domUtilsSource from "./dom-utils.js?raw";
+import markdownParserSource from "./markdown-parser.js?raw";
+import stateSource from "./state.js?raw";
+import roadmapModelSource from "./roadmap-model.js?raw";
+import trackingSource from "./tracking.js?raw";
+import progressSource from "./progress.js?raw";
+import customDataSource from "./custom-data.js?raw";
+import collectionsSource from "./collections.js?raw";
+import journalDataSource from "./journal-data.js?raw";
+import actionsSource from "./actions.js?raw";
+import controlsSource from "./controls.js?raw";
+import renderControlsSource from "./render-controls.js?raw";
+import renderNavSource from "./render-nav.js?raw";
+import renderContentSource from "./render-content.js?raw";
+import renderOverviewsSource from "./render-overviews.js?raw";
+import renderChapterSource from "./render-chapter.js?raw";
+import renderPlanPortfolioSource from "./render-plan-portfolio.js?raw";
+import renderSupportSource from "./render-support.js?raw";
+import renderCustomSource from "./render-custom.js?raw";
+import renderReviewSource from "./render-review.js?raw";
+import journalCommandsSource from "./journal-commands.js?raw";
+import renderJournalFormSource from "./render-journal-form.js?raw";
+import renderJournalEntrySource from "./render-journal-entry.js?raw";
+import renderJournalSource from "./render-journal.js?raw";
+import renderAppSource from "./render-app.js?raw";
+import appSource from "../app.js?raw";
 
 Object.assign(window, {
   destroyAllJournalEditors,
@@ -48,35 +48,35 @@ Object.assign(window, {
 });
 
 const legacyScripts = [
-  contentUrl,
-  configUrl,
-  storageUrl,
-  domUtilsUrl,
-  markdownParserUrl,
-  stateUrl,
-  roadmapModelUrl,
-  trackingUrl,
-  progressUrl,
-  customDataUrl,
-  collectionsUrl,
-  journalDataUrl,
-  actionsUrl,
-  controlsUrl,
-  renderControlsUrl,
-  renderNavUrl,
-  renderContentUrl,
-  renderOverviewsUrl,
-  renderChapterUrl,
-  renderPlanPortfolioUrl,
-  renderSupportUrl,
-  renderCustomUrl,
-  renderReviewUrl,
-  journalCommandsUrl,
-  renderJournalFormUrl,
-  renderJournalEntryUrl,
-  renderJournalUrl,
-  renderAppUrl,
-  appUrl
+  contentSource,
+  configSource,
+  storageSource,
+  domUtilsSource,
+  markdownParserSource,
+  stateSource,
+  roadmapModelSource,
+  trackingSource,
+  progressSource,
+  customDataSource,
+  collectionsSource,
+  journalDataSource,
+  actionsSource,
+  controlsSource,
+  renderControlsSource,
+  renderNavSource,
+  renderContentSource,
+  renderOverviewsSource,
+  renderChapterSource,
+  renderPlanPortfolioSource,
+  renderSupportSource,
+  renderCustomSource,
+  renderReviewSource,
+  journalCommandsSource,
+  renderJournalFormSource,
+  renderJournalEntrySource,
+  renderJournalSource,
+  renderAppSource,
+  appSource
 ];
 
 loadLegacyScripts().catch((error) => {
@@ -84,18 +84,13 @@ loadLegacyScripts().catch((error) => {
 });
 
 async function loadLegacyScripts() {
-  for (const scriptUrl of legacyScripts) {
-    await loadLegacyScript(scriptUrl);
+  for (const scriptSource of legacyScripts) {
+    loadLegacyScript(scriptSource);
   }
 }
 
-function loadLegacyScript(src) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = src;
-    script.async = false;
-    script.onload = resolve;
-    script.onerror = () => reject(new Error(`Failed to load ${src}`));
-    document.head.append(script);
-  });
+function loadLegacyScript(source) {
+  const script = document.createElement("script");
+  script.textContent = source;
+  document.head.append(script);
 }

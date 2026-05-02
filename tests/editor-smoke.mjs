@@ -5,8 +5,13 @@ const distIndex = readFileSync(new URL("../dist/index.html", import.meta.url), "
 if (distIndex.includes('type="module"') || distIndex.includes("modulepreload")) {
   throw new Error("Built index should use a classic deferred script for file:// compatibility.");
 }
-if (!distIndex.includes('<script defer src="./assets/')) {
+const scriptMatch = distIndex.match(/<script defer src="(\.\/assets\/[^"]+)"><\/script>/);
+if (!scriptMatch) {
   throw new Error("Built index does not reference the bundled app script with a relative file path.");
+}
+const distScript = readFileSync(new URL(`../dist/${scriptMatch[1].replace(/^\.\//, "")}`, import.meta.url), "utf8");
+if (distScript.includes("data:text/javascript")) {
+  throw new Error("Built app should not dynamically load legacy scripts as external resources.");
 }
 
 const window = new Window({ url: "https://sec-roadmap.test/" });

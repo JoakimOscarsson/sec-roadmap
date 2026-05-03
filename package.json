@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "check:js": "for f in app.js js/*.js tests/*.mjs; do node --check \"$f\" || exit 1; done",
-    "test:smoke": "npm run build && node tests/editor-smoke.mjs"
+    "check:js": "for f in app.js js/*.js mcp/*.mjs tests/*.mjs; do node --check \"$f\" || exit 1; done",
+    "mcp:stdio": "node mcp/sec-roadmap-mcp.mjs",
+    "test:mcp": "node tests/mcp-smoke.mjs",
+    "test:smoke": "npm run build && node tests/editor-smoke.mjs && node tests/mcp-smoke.mjs"
   },
   "devDependencies": {
     "happy-dom": "^20.9.0",

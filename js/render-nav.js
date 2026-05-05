@@ -17,6 +17,13 @@ function renderNav(visible) {
     return;
   }
 
+  if (state.view === "mirror") {
+    const item = element("li");
+    item.append(element("p", "empty", "Local mirror settings."));
+    dom.nav.append(item);
+    return;
+  }
+
   if (state.tab === "favorites") {
     renderFavoriteNav();
     return;

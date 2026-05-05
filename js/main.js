@@ -4,6 +4,7 @@ import storageSource from "./storage.js?raw";
 import domUtilsSource from "./dom-utils.js?raw";
 import markdownParserSource from "./markdown-parser.js?raw";
 import stateSource from "./state.js?raw";
+import mirrorSyncSource from "./mirror-sync.js?raw";
 import roadmapModelSource from "./roadmap-model.js?raw";
 import trackingSource from "./tracking.js?raw";
 import progressSource from "./progress.js?raw";
@@ -28,6 +29,7 @@ import journalCommandsSource from "./journal-commands.js?raw";
 import renderJournalFormSource from "./render-journal-form.js?raw";
 import renderJournalEntrySource from "./render-journal-entry.js?raw";
 import renderJournalSource from "./render-journal.js?raw";
+import renderMirrorSource from "./render-mirror.js?raw";
 import renderAppSource from "./render-app.js?raw";
 import appSource from "../app.js?raw";
 
@@ -38,6 +40,7 @@ const legacyScripts = [
   domUtilsSource,
   markdownParserSource,
   stateSource,
+  mirrorSyncSource,
   roadmapModelSource,
   trackingSource,
   progressSource,
@@ -62,6 +65,7 @@ const legacyScripts = [
   renderJournalFormSource,
   renderJournalEntrySource,
   renderJournalSource,
+  renderMirrorSource,
   renderAppSource,
   appSource
 ];

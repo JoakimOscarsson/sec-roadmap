@@ -9,7 +9,7 @@ function render() {
     state.view = "overview";
   }
 
-  const standaloneView = ["map", "guide", "review", "journal", "portfolio", "reference", "sources"].includes(state.view);
+  const standaloneView = ["map", "guide", "review", "journal", "portfolio", "reference", "sources", "mirror"].includes(state.view);
   const visible = standaloneView || state.tab === "favorites" || state.tab === "custom" ? [] : getVisibleChapters();
   if (!standaloneView && state.tab !== "favorites" && state.tab !== "custom") {
     ensureSelection(visible);
@@ -32,6 +32,8 @@ function render() {
     renderSupportView(roadmap.support.reference, "Reference");
   } else if (state.view === "sources") {
     renderSupportView(roadmap.support.sources, "Sources", "Official Sources");
+  } else if (state.view === "mirror") {
+    renderMirror();
   } else if (state.view === "chapter") {
     renderChapter(visible);
   } else if (state.view === "track") {
@@ -50,12 +52,13 @@ function render() {
 }
 
 function renderOverallProgress(visible) {
-  if (["map", "guide", "reference", "sources"].includes(state.view)) {
+  if (["map", "guide", "reference", "sources", "mirror"].includes(state.view)) {
     const labels = {
       map: "Guide",
       guide: "Guide",
       reference: "Reference",
-      sources: "Sources"
+      sources: "Sources",
+      mirror: "Mirror"
     };
     dom.progressScope.textContent = labels[state.view];
     dom.overallPct.textContent = "-";

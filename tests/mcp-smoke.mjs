@@ -7,7 +7,7 @@ const root = new URL("..", import.meta.url);
 const tempDir = mkdtempSync(join(tmpdir(), "sec-roadmap-mcp-"));
 const statePath = join(tempDir, "backup.json");
 
-writeFileSync(statePath, `${JSON.stringify({
+writeState({
   schema: "sec-roadmap.user-state",
   version: 1,
   state: {
@@ -38,7 +38,7 @@ writeFileSync(statePath, `${JSON.stringify({
       context: "Custom / AI Security"
     }]
   }
-}, null, 2)}\n`);
+});
 
 const child = spawn(process.execPath, ["mcp/sec-roadmap-mcp.mjs", "--state", statePath], {
   cwd: root,
@@ -93,6 +93,33 @@ try {
     throw new Error("MCP plan_list should expose pinned custom topics with progress.");
   }
 
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  writeState({
+    schema: "sec-roadmap.live-state",
+    version: 1,
+    state: {
+      checked: { "custom:topic-1": 3 },
+      favorites: { "custom:topic-1": true },
+      dates: { "custom:topic-1": { 3: "2026-05-03" } },
+      custom: [{ id: "topic-1", title: "Custom AI planning lab", area: "AI Security" }],
+      journal: [{
+        id: "journal-1",
+        title: "Planning note",
+        subtitle: "Custom AI planning lab",
+        body: "Worked through the custom AI planning topic.",
+        date: "2026-05-01",
+        type: "note",
+        linkedItemKeys: ["custom:topic-1"],
+        tags: ["planning"]
+      }]
+    }
+  });
+
+  const updatedPlan = await callTool("plan_list", { detail: "normal" });
+  if (updatedPlan.items[0].level !== 3 || updatedPlan.items[0].date !== "2026-05-03") {
+    throw new Error("MCP plan_list should reload a changed live mirror state file between calls.");
+  }
+
   const journal = await callTool("journal_list", {
     days: 30,
     type: "note",
@@ -138,6 +165,10 @@ function request(method, params = {}) {
 
 function notify(method, params = {}) {
   child.stdin.write(frame({ jsonrpc: "2.0", method, params }));
+}
+
+function writeState(value) {
+  writeFileSync(statePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 async function callTool(name, args = {}) {

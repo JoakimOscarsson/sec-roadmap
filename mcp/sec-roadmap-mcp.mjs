@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -23,7 +23,9 @@ const SPECIALIZATION_TRACK_NAMES = {
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const roadmap = parseRoadmap(readRoadmapMarkdown());
-const state = normalizeState(loadStateCandidate());
+let state = normalizeState(loadStateCandidate());
+let loadedStatePath = getStateFilePath();
+let loadedStateMtimeMs = stateFileMtime(loadedStatePath);
 
 const tools = [
   {
@@ -174,6 +176,8 @@ async function handleRawMessage(body) {
 }
 
 async function handleRequest(method, params) {
+  refreshStateFromDisk();
+
   if (method === "initialize") {
     return {
       protocolVersion: negotiatedProtocolVersion(params.protocolVersion),
@@ -195,6 +199,25 @@ async function handleRequest(method, params) {
   if (method === "resources/read") return readResource(params.uri);
 
   throw mcpError(-32601, `Unsupported method: ${method}`);
+}
+
+function refreshStateFromDisk() {
+  const statePath = getStateFilePath();
+  const mtimeMs = stateFileMtime(statePath);
+  if (statePath === loadedStatePath && mtimeMs === loadedStateMtimeMs) return;
+
+  loadedStatePath = statePath;
+  loadedStateMtimeMs = mtimeMs;
+  state = normalizeState(loadStateCandidate());
+}
+
+function stateFileMtime(statePath) {
+  if (!statePath || !existsSync(statePath)) return -1;
+  try {
+    return statSync(statePath).mtimeMs;
+  } catch {
+    return -1;
+  }
 }
 
 function negotiatedProtocolVersion(clientVersion) {

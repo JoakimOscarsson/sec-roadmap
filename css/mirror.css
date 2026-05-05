@@ -1,0 +1,81 @@
+.mirror-panel {
+  max-width: 760px;
+}
+
+.mirror-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.mirror-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-2);
+  font-size: 14px;
+}
+
+.mirror-checkbox-row input {
+  accent-color: var(--accent);
+}
+
+.mirror-field {
+  display: grid;
+  gap: 6px;
+}
+
+.mirror-field-label {
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mirror-field input {
+  width: 100%;
+  min-height: 36px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 5px;
+  padding: 7px 9px;
+  font-size: 13px;
+}
+
+.mirror-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mirror-status {
+  border-left: 2px solid var(--line);
+  padding: 8px 0 8px 12px;
+  color: var(--text-2);
+}
+
+.mirror-status-ok {
+  border-left-color: var(--check);
+}
+
+.mirror-status-error {
+  border-left-color: #9a6a54;
+}
+
+.mirror-status-title {
+  color: var(--text);
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.mirror-status-detail,
+.mirror-status-error {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mirror-status-error {
+  margin-top: 4px;
+  color: #7a4c3d;
+}

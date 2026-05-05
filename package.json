@@ -6,9 +6,12 @@
   "scripts": {
     "build": "vite build",
     "check:js": "for f in app.js js/*.js mcp/*.mjs tests/*.mjs; do node --check \"$f\" || exit 1; done",
+    "companion": "node mcp/sec-roadmap-companion.mjs",
+    "mcp:mirror": "node mcp/sec-roadmap-mcp.mjs --state .sec-roadmap/mirror-state.json",
     "mcp:stdio": "node mcp/sec-roadmap-mcp.mjs",
+    "test:companion": "node tests/companion-smoke.mjs",
     "test:mcp": "node tests/mcp-smoke.mjs",
-    "test:smoke": "npm run build && node tests/editor-smoke.mjs && node tests/mcp-smoke.mjs"
+    "test:smoke": "npm run build && node tests/editor-smoke.mjs && node tests/mcp-smoke.mjs && node tests/companion-smoke.mjs"
   },
   "devDependencies": {
     "happy-dom": "^20.9.0",

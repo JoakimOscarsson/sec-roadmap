@@ -476,7 +476,7 @@ function normalizeState(saved) {
         specializations: saved?.selected?.specializations || ""
       },
       specializationTrack: typeof saved?.specializationTrack === "string" ? saved.specializationTrack : "",
-      view: ["overview", "track", "chapter", "map", "guide", "review", "journal", "portfolio", "reference", "sources"].includes(saved?.view)
+      view: ["overview", "track", "chapter", "map", "guide", "review", "journal", "portfolio", "reference", "sources", "mirror"].includes(saved?.view)
         ? saved.view
         : "overview"
     };
@@ -492,9 +492,217 @@ async function loadState() {
 
 function saveState() {
   const snapshot = normalizeState(state);
-  return savePersistedState(snapshot);
+  const persisted = savePersistedState(snapshot);
+  if (typeof scheduleMirrorSync === "function") {
+    persisted.then(() => scheduleMirrorSync("state-save")).catch(() => {});
+  }
+  return persisted;
 }
-`,c=`function getActiveChapters() {
+`,c=`const ROADMAP_MIRROR_CONFIG_KEY = "securityRoadmap.localMirror";
+const ROADMAP_MIRROR_DEFAULT_ENDPOINT = "http://127.0.0.1:3333";
+const ROADMAP_MIRROR_SYNC_DELAY_MS = 700;
+const ROADMAP_MIRROR_TIMEOUT_MS = 2200;
+
+let mirrorConfig = loadMirrorConfig();
+let mirrorSyncTimer = null;
+let mirrorSyncInFlight = false;
+let mirrorSyncQueued = false;
+let mirrorStatus = {
+  state: mirrorConfig.enabled ? "idle" : "disabled",
+  message: mirrorConfig.enabled ? "Mirror enabled." : "Mirror disabled.",
+  lastOkAt: "",
+  lastErrorAt: "",
+  lastError: "",
+  lastMirroredAt: ""
+};
+
+function initializeMirrorSync() {
+  mirrorConfig = loadMirrorConfig();
+  mirrorStatus.state = mirrorConfig.enabled ? "idle" : "disabled";
+  mirrorStatus.message = mirrorConfig.enabled ? "Mirror enabled." : "Mirror disabled.";
+  if (mirrorConfig.enabled) scheduleMirrorSync("startup", { delay: 1200 });
+}
+
+function loadMirrorConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ROADMAP_MIRROR_CONFIG_KEY) || "{}");
+    return normalizeMirrorConfig(saved);
+  } catch {
+    return normalizeMirrorConfig({});
+  }
+}
+
+function normalizeMirrorConfig(value) {
+  return {
+    enabled: Boolean(value?.enabled),
+    endpoint: normalizeMirrorEndpoint(value?.endpoint || ROADMAP_MIRROR_DEFAULT_ENDPOINT),
+    token: typeof value?.token === "string" ? value.token.trim() : ""
+  };
+}
+
+function normalizeMirrorEndpoint(value) {
+  const trimmed = String(value || "").trim() || ROADMAP_MIRROR_DEFAULT_ENDPOINT;
+  return trimmed.replace(/\\/+$/, "");
+}
+
+function saveMirrorConfig(config, options = {}) {
+  mirrorConfig = normalizeMirrorConfig(config);
+  try {
+    localStorage.setItem(ROADMAP_MIRROR_CONFIG_KEY, JSON.stringify(mirrorConfig));
+  } catch {
+    // Mirror settings are local-only; sync can still run for this session.
+  }
+  mirrorStatus.state = mirrorConfig.enabled ? "idle" : "disabled";
+  mirrorStatus.message = mirrorConfig.enabled ? "Mirror enabled." : "Mirror disabled.";
+  if (!mirrorConfig.enabled) window.clearTimeout(mirrorSyncTimer);
+  renderMirrorStatus();
+  if (mirrorConfig.enabled && options.sync !== false) scheduleMirrorSync("settings-save", { delay: 0 });
+  return mirrorConfig;
+}
+
+function getMirrorConfig() {
+  return { ...mirrorConfig };
+}
+
+function getMirrorStatus() {
+  return { ...mirrorStatus };
+}
+
+function scheduleMirrorSync(reason = "state-change", options = {}) {
+  if (!mirrorConfig.enabled || typeof fetch !== "function") return Promise.resolve(false);
+  const delay = Number.isFinite(options.delay) ? Math.max(0, options.delay) : ROADMAP_MIRROR_SYNC_DELAY_MS;
+  mirrorStatus.state = "pending";
+  mirrorStatus.message = "Sync pending.";
+  mirrorStatus.reason = reason;
+  renderMirrorStatus();
+  window.clearTimeout(mirrorSyncTimer);
+  mirrorSyncTimer = window.setTimeout(() => {
+    flushMirrorSync(reason).catch(() => {});
+  }, delay);
+  return Promise.resolve(true);
+}
+
+async function flushMirrorSync(reason = "manual") {
+  if (!mirrorConfig.enabled || typeof fetch !== "function") return false;
+  if (mirrorSyncInFlight) {
+    mirrorSyncQueued = true;
+    return false;
+  }
+
+  mirrorSyncInFlight = true;
+  mirrorStatus.state = "syncing";
+  mirrorStatus.message = "Syncing.";
+  mirrorStatus.reason = reason;
+  renderMirrorStatus();
+
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timeout = controller
+    ? window.setTimeout(() => controller.abort(), ROADMAP_MIRROR_TIMEOUT_MS)
+    : null;
+
+  try {
+    const response = await fetch(mirrorUrl("/api/mirror/state"), {
+      method: "PUT",
+      mode: "cors",
+      cache: "no-store",
+      headers: mirrorRequestHeaders(),
+      body: JSON.stringify(createMirrorPayload()),
+      signal: controller?.signal
+    });
+
+    if (!response.ok) {
+      const detail = await response.text().catch(() => "");
+      throw new Error(\`Mirror sync failed (\${response.status})\${detail ? \`: \${trimText(detail, 180)}\` : ""}\`);
+    }
+
+    const result = await response.json().catch(() => ({}));
+    mirrorStatus.state = "ok";
+    mirrorStatus.message = "Synced.";
+    mirrorStatus.lastOkAt = new Date().toISOString();
+    mirrorStatus.lastError = "";
+    mirrorStatus.lastMirroredAt = result.mirroredAt || mirrorStatus.lastOkAt;
+    return true;
+  } catch (error) {
+    mirrorStatus.state = "error";
+    mirrorStatus.message = "Sync failed.";
+    mirrorStatus.lastErrorAt = new Date().toISOString();
+    mirrorStatus.lastError = error.name === "AbortError" ? "Mirror sync timed out." : error.message || "Mirror sync failed.";
+    return false;
+  } finally {
+    if (timeout) window.clearTimeout(timeout);
+    mirrorSyncInFlight = false;
+    renderMirrorStatus();
+    if (mirrorSyncQueued) {
+      mirrorSyncQueued = false;
+      scheduleMirrorSync("queued", { delay: 250 });
+    }
+  }
+}
+
+function createMirrorPayload() {
+  return {
+    schema: "sec-roadmap.live-state",
+    version: 1,
+    mirroredAt: new Date().toISOString(),
+    app: {
+      name: "sec-roadmap",
+      storageVersion: ROADMAP_DB_VERSION
+    },
+    source: {
+      href: window.location.href,
+      title: document.title
+    },
+    state: normalizeState(state)
+  };
+}
+
+function mirrorRequestHeaders() {
+  const headers = { "content-type": "application/json" };
+  if (mirrorConfig.token) headers.authorization = \`Bearer \${mirrorConfig.token}\`;
+  return headers;
+}
+
+function mirrorUrl(path) {
+  return new URL(path, \`\${mirrorConfig.endpoint}/\`).href;
+}
+
+function renderMirrorStatus() {
+  const node = document.getElementById("mirrorStatus");
+  if (!node) return;
+
+  const status = getMirrorStatus();
+  node.className = \`mirror-status mirror-status-\${status.state}\`;
+  node.replaceChildren();
+
+  const title = element("div", "mirror-status-title", status.message);
+  const detail = element("div", "mirror-status-detail", mirrorStatusDetail(status));
+  node.append(title, detail);
+
+  if (status.lastError) {
+    node.append(element("div", "mirror-status-error", status.lastError));
+  }
+}
+
+function mirrorStatusDetail(status) {
+  if (status.state === "disabled") return "Enable the local companion mirror to sync app state.";
+  if (status.state === "pending") return "Waiting for recent changes to settle.";
+  if (status.state === "syncing") return "Pushing the latest IndexedDB state to the local companion.";
+  if (status.lastMirroredAt) return \`Last mirror update: \${formatMirrorDateTime(status.lastMirroredAt)}\`;
+  return "No successful mirror sync yet.";
+}
+
+function formatMirrorDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+`,l=`function getActiveChapters() {
   if (state.tab === "favorites" || state.tab === "custom") return [];
   return state.tab === "specializations" ? roadmap.specializations : roadmap.core;
 }
@@ -681,7 +889,7 @@ function specializationTrackExcerpt(track) {
   const suffix = track.chapters.length > chapterNames.length ? "..." : "";
   return trimText(\`\${chapterNames.join("; ")}\${suffix}\`, 180);
 }
-`,l=`function getLevel(key) {
+`,d=`function getLevel(key) {
   const value = state.checked[key];
   if (value === true) return 3;
   if (typeof value === "number" && value >= 1 && value <= 3) return value;
@@ -889,7 +1097,7 @@ function lineKey(chapter, section, line) {
 function isTrackableLine(line) {
   return /^(\\s*[-*]\\s+|\\s*\\d+\\.\\s+)/.test(line);
 }
-`,d=`function getFavoriteProgress() {
+`,u=`function getFavoriteProgress() {
   const favorites = getFavoriteItems();
   const counts = favorites.reduce(
     (acc, favorite) => {
@@ -975,7 +1183,7 @@ function getVisibleSectionKeys(chapter, section) {
   if (level === null) return keys;
   return keys.filter((key) => getLevel(key) === level);
 }
-`,u=`function getVisibleCustomItems() {
+`,p=`function getVisibleCustomItems() {
   const query = state.query.trim().toLowerCase();
   const level = selectedLevel();
 
@@ -1083,7 +1291,7 @@ function customTopicKey(id) {
 function isValidCustomTopic(topic) {
   return topic && typeof topic.id === "string" && typeof topic.title === "string" && topic.title.trim();
 }
-`,p=`function getFavoriteItems() {
+`,m=`function getFavoriteItems() {
   const query = state.query.trim().toLowerCase();
   const level = selectedLevel();
   const allChapters = [...roadmap.core, ...roadmap.specializations];
@@ -1260,7 +1468,7 @@ function getReviewBuckets() {
 
   return buckets;
 }
-`,m=`function getJournalEntries() {
+`,g=`function getJournalEntries() {
   const query = state.query.trim().toLowerCase();
   const typeFilter = getActiveJournalTypeFilter();
   const linkFilter = getActiveJournalLinkFilter();
@@ -1701,7 +1909,7 @@ function formatJournalMonth(month) {
   const names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return \`\${names[Number(match[2]) - 1]} \${match[1]}\`;
 }
-`,g=`const ROADMAP_BACKUP_SCHEMA = "sec-roadmap.user-state";
+`,y=`const ROADMAP_BACKUP_SCHEMA = "sec-roadmap.user-state";
 const ROADMAP_BACKUP_VERSION = 1;
 
 async function exportRoadmapBackup() {
@@ -1819,7 +2027,7 @@ function roadmapBackupSummary(snapshot) {
   ];
   return parts.join("\\n");
 }
-`,y=`const JOURNAL_RUNTIME_SCRIPT_SRC = "./js/journal-runtime.js";
+`,f=`const JOURNAL_RUNTIME_SCRIPT_SRC = "./js/journal-runtime.js";
 const JOURNAL_RUNTIME_MODULE_SRC = "./js/journal-runtime-entry.js";
 const pendingLazyJournalEditors = new Set();
 let journalRuntimeLoadPromise = null;
@@ -2075,7 +2283,7 @@ function openJournalPdfExportDialog() {
 function closeJournalPdfExportDialog() {
   document.querySelector(".pdf-export-overlay")?.remove();
 }
-`,f=`function selectChapter(id) {
+`,v=`function selectChapter(id) {
   state.selected[state.tab] = id;
   if (state.tab === "specializations") {
     const chapter = roadmap.specializations.find((item) => item.id === id);
@@ -2129,7 +2337,7 @@ function openCustomArea(title) {
   render();
   document.getElementById(customAreaAnchor(title))?.scrollIntoView({ block: "start" });
 }
-`,v=`function initializeControls() {
+`,b=`function initializeControls() {
   dom.search.value = state.query;
   dom.levelFilter.value = state.level;
   dom.journalTypeFilter.value = getActiveJournalTypeFilter();
@@ -2188,6 +2396,11 @@ function bindEvents() {
 
   dom.sourcesBtn.addEventListener("click", () => {
     state.view = "sources";
+    render();
+  });
+
+  dom.mirrorBtn.addEventListener("click", () => {
+    state.view = "mirror";
     render();
   });
 
@@ -2251,11 +2464,11 @@ function isInteractiveKeyboardTarget(target) {
 }
 
 function updateTabButtons() {
-  const tabActive = !["review", "journal", "map", "guide", "portfolio", "reference", "sources"].includes(state.view);
+  const tabActive = !["review", "journal", "map", "guide", "portfolio", "reference", "sources", "mirror"].includes(state.view);
   dom.tabButtons.forEach((button) => {
     button.classList.toggle("active", tabActive && button.dataset.tab === state.tab);
   });
-  dom.levelFilter.disabled = state.view === "review" || state.view === "journal";
+  dom.levelFilter.disabled = state.view === "review" || state.view === "journal" || state.view === "mirror";
   dom.journalTypeFilter.value = getActiveJournalTypeFilter();
   dom.journalTypeFilterGroup.hidden = state.view !== "journal";
 }
@@ -2267,6 +2480,7 @@ function updateViewButtons() {
   dom.portfolioBtn.classList.toggle("active", state.view === "portfolio");
   dom.referenceBtn.classList.toggle("active", state.view === "reference");
   dom.sourcesBtn.classList.toggle("active", state.view === "sources");
+  dom.mirrorBtn.classList.toggle("active", state.view === "mirror");
 }
 `,k=`function renderFavoriteButton(key, text) {
   const button = element("button", "favorite-btn");
@@ -2410,7 +2624,7 @@ function renderPinIcon(className) {
   \`;
   return icon;
 }
-`,b=`function renderNav(visible) {
+`,S=`function renderNav(visible) {
   dom.nav.replaceChildren();
 
   const supportContext = getSupportViewContext();
@@ -2426,6 +2640,13 @@ function renderPinIcon(className) {
 
   if (state.view === "journal") {
     renderJournalNav();
+    return;
+  }
+
+  if (state.view === "mirror") {
+    const item = element("li");
+    item.append(element("p", "empty", "Local mirror settings."));
+    dom.nav.append(item);
     return;
   }
 
@@ -2603,7 +2824,7 @@ function supportNavCount(block) {
   const bulletCount = block.lines.filter((line) => /^\\s*[-*]\\s+/.test(line.text)).length;
   return bulletCount ? String(bulletCount) : "";
 }
-`,S=`function renderHeader(title, description, crumb) {
+`,w=`function renderHeader(title, description, crumb) {
   const header = element("header", "part-header");
   header.append(element("div", "crumb", crumb), element("h1", "", title));
   if (description) header.append(inlineHtml("p", description));
@@ -2687,7 +2908,7 @@ function renderBlocks(lines, chapter, section, parent, trackItems) {
     parent.append(inlineHtml("p", text));
   });
 }
-`,w=`function renderOverview(visible) {
+`,C=`function renderOverview(visible) {
   dom.main.replaceChildren();
 
   const header = renderHeader(tabTitle(), tabIntro(), "Roadmap");
@@ -2816,7 +3037,7 @@ function renderSpecializationTrack(visible) {
 
   dom.main.append(grid);
 }
-`,C=`function renderChapter(visible) {
+`,I=`function renderChapter(visible) {
   const chapter = visible.find((item) => item.id === state.selected[state.tab]) || visible[0];
   dom.main.replaceChildren();
 
@@ -2882,7 +3103,7 @@ function renderStudySection(chapter, section) {
   renderBlocks(section.lines, chapter, section, wrapper, true);
   return wrapper;
 }
-`,I=`function renderPortfolioBlocks(block, parent) {
+`,A=`function renderPortfolioBlocks(block, parent) {
   let list = null;
 
   const flushList = () => {
@@ -3073,7 +3294,7 @@ function renderFavoriteNav() {
     dom.nav.append(item);
   });
 }
-`,A=`function renderSupportView(support, crumb, title = support?.title) {
+`,T=`function renderSupportView(support, crumb, title = support?.title) {
   dom.main.replaceChildren();
   if (!support) {
     dom.main.append(element("p", "empty", "No content loaded."));
@@ -3097,7 +3318,7 @@ function renderFavoriteNav() {
     dom.main.append(section);
   });
 }
-`,T=`function renderCustom() {
+`,E=`function renderCustom() {
   dom.main.replaceChildren();
 
   const items = getVisibleCustomItems();
@@ -3233,7 +3454,7 @@ function renderCustomNav() {
     dom.nav.append(item);
   });
 }
-`,E=`function renderReview() {
+`,P=`function renderReview() {
   dom.main.replaceChildren();
 
   const buckets = getReviewBuckets();
@@ -3359,7 +3580,7 @@ function renderReviewNav() {
     dom.nav.append(item);
   });
 }
-`,P=`const JOURNAL_COMMANDS = [
+`,x=`const JOURNAL_COMMANDS = [
   { id: "title", aliases: ["t"], label: "/title", detail: "Set note title" },
   { id: "subtitle", aliases: ["st", "substitle"], label: "/subtitle", detail: "Set note subtitle" },
   { id: "clear-subtitle", label: "/clear-subtitle", detail: "Clear note subtitle" },
@@ -3655,7 +3876,7 @@ function uniqueJournalTags(tags) {
 function uniqueJournalLinks(keys) {
   return Array.from(new Set(keys.filter((key) => typeof key === "string" && key)));
 }
-`,x=`let editingJournalId = "";
+`,R=`let editingJournalId = "";
 let pendingJournalFocusId = "";
 const JOURNAL_AUTOSAVE_DELAY_MS = 2000;
 const journalInlineEditorControls = new Map();
@@ -3970,7 +4191,7 @@ function journalBodyHasContent(body) {
     .trim();
   return Boolean(normalized);
 }
-`,R=`let expandedJournalIds = new Set();
+`,L=`let expandedJournalIds = new Set();
 
 function renderJournalEntry(entry) {
   const card = element("article", "journal-card");
@@ -4149,7 +4370,7 @@ function toggleJournalEntryExpansion(entryId, keepOtherEntriesOpen) {
 function journalPanelId(entry) {
   return \`journal-entry-\${entry.id}-body\`;
 }
-`,L=`function renderJournal() {
+`,D=`function renderJournal() {
   dom.main.replaceChildren();
 
   const entries = getJournalEntries();
@@ -4344,7 +4565,76 @@ function getJournalGroupsForRender(entries) {
 function journalGroupDisplayCount(group) {
   return group.items.length;
 }
-`,D=`function render() {
+`,M=`function renderMirror() {
+  dom.main.replaceChildren();
+  dom.main.append(renderHeader("Mirror", "Local companion sync for MCP clients.", "Settings"));
+
+  const config = getMirrorConfig();
+  const section = element("section", "mirror-panel");
+  const form = element("form", "mirror-form");
+  form.id = "mirrorForm";
+
+  const enabledLabel = element("label", "mirror-checkbox-row");
+  const enabled = document.createElement("input");
+  enabled.type = "checkbox";
+  enabled.name = "enabled";
+  enabled.checked = config.enabled;
+  enabledLabel.append(enabled, element("span", "", "Enable local mirror sync"));
+
+  const endpointLabel = element("label", "mirror-field");
+  endpointLabel.append(element("span", "mirror-field-label", "Endpoint"));
+  const endpoint = document.createElement("input");
+  endpoint.type = "url";
+  endpoint.name = "endpoint";
+  endpoint.autocomplete = "off";
+  endpoint.spellcheck = false;
+  endpoint.value = config.endpoint;
+  endpointLabel.append(endpoint);
+
+  const tokenLabel = element("label", "mirror-field");
+  tokenLabel.append(element("span", "mirror-field-label", "Token"));
+  const token = document.createElement("input");
+  token.type = "password";
+  token.name = "token";
+  token.autocomplete = "off";
+  token.spellcheck = false;
+  token.value = config.token;
+  tokenLabel.append(token);
+
+  const actions = element("div", "mirror-actions");
+  const save = element("button", "ghost-btn", "Save");
+  save.type = "submit";
+  const sync = element("button", "ghost-btn", "Sync now");
+  sync.type = "button";
+  actions.append(save, sync);
+
+  const status = element("div", "mirror-status", "");
+  status.id = "mirrorStatus";
+
+  form.append(enabledLabel, endpointLabel, tokenLabel, actions, status);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    saveMirrorConfig({
+      enabled: enabled.checked,
+      endpoint: endpoint.value,
+      token: token.value
+    });
+  });
+
+  sync.addEventListener("click", () => {
+    saveMirrorConfig({
+      enabled: enabled.checked,
+      endpoint: endpoint.value,
+      token: token.value
+    }, { sync: false });
+    flushMirrorSync("manual").catch(() => {});
+  });
+
+  section.append(form);
+  dom.main.append(section);
+  renderMirrorStatus();
+}
+`,O=`function render() {
   if (typeof saveJournalInlineEditors === "function") saveJournalInlineEditors();
   destroyAllJournalEditors();
 
@@ -4355,7 +4645,7 @@ function journalGroupDisplayCount(group) {
     state.view = "overview";
   }
 
-  const standaloneView = ["map", "guide", "review", "journal", "portfolio", "reference", "sources"].includes(state.view);
+  const standaloneView = ["map", "guide", "review", "journal", "portfolio", "reference", "sources", "mirror"].includes(state.view);
   const visible = standaloneView || state.tab === "favorites" || state.tab === "custom" ? [] : getVisibleChapters();
   if (!standaloneView && state.tab !== "favorites" && state.tab !== "custom") {
     ensureSelection(visible);
@@ -4378,6 +4668,8 @@ function journalGroupDisplayCount(group) {
     renderSupportView(roadmap.support.reference, "Reference");
   } else if (state.view === "sources") {
     renderSupportView(roadmap.support.sources, "Sources", "Official Sources");
+  } else if (state.view === "mirror") {
+    renderMirror();
   } else if (state.view === "chapter") {
     renderChapter(visible);
   } else if (state.view === "track") {
@@ -4396,12 +4688,13 @@ function journalGroupDisplayCount(group) {
 }
 
 function renderOverallProgress(visible) {
-  if (["map", "guide", "reference", "sources"].includes(state.view)) {
+  if (["map", "guide", "reference", "sources", "mirror"].includes(state.view)) {
     const labels = {
       map: "Guide",
       guide: "Guide",
       reference: "Reference",
-      sources: "Sources"
+      sources: "Sources",
+      mirror: "Mirror"
     };
     dom.progressScope.textContent = labels[state.view];
     dom.overallPct.textContent = "-";
@@ -4466,7 +4759,7 @@ function renderOverallProgress(visible) {
   dom.overallPct.textContent = \`\${progress.percent}%\`;
   dom.overallBar.style.width = \`\${progress.percent}%\`;
 }
-`,M=`const markdown = window.ROADMAP_MARKDOWN || "";
+`,F=`const markdown = window.ROADMAP_MARKDOWN || "";
 
 const dom = {
   tabButtons: Array.from(document.querySelectorAll("[data-tab]")),
@@ -4488,6 +4781,7 @@ const dom = {
   exportBackupBtn: document.getElementById("exportBackupBtn"),
   importBackupBtn: document.getElementById("importBackupBtn"),
   importBackupInput: document.getElementById("importBackupInput"),
+  mirrorBtn: document.getElementById("mirrorBtn"),
   resetBtn: document.getElementById("resetBtn")
 };
 
@@ -4499,7 +4793,8 @@ window.roadmapReady = initializeApp();
 async function initializeApp() {
   state = await loadState();
   initializeControls();
+  initializeMirrorSync();
   bindEvents();
   render();
 }
-`,O=[t,r,i,a,o,s,c,l,d,u,p,m,g,y,h,f,v,k,b,S,w,C,I,A,T,E,P,x,R,L,D,M];F().catch(e=>{console.error("Failed to initialize the app.",e)});async function F(){for(const e of O)N(e)}function N(e){const n=document.createElement("script");n.textContent=e,document.head.append(n)}
+`,N=[t,r,i,a,o,s,c,l,d,u,p,m,g,y,f,h,v,b,k,S,w,C,I,A,T,E,P,x,R,L,D,M,O,F];B().catch(e=>{console.error("Failed to initialize the app.",e)});async function B(){for(const e of N)j(e)}function j(e){const n=document.createElement("script");n.textContent=e,document.head.append(n)}

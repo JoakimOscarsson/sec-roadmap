@@ -60,6 +60,11 @@ function bindEvents() {
     render();
   });
 
+  dom.mirrorBtn.addEventListener("click", () => {
+    state.view = "mirror";
+    render();
+  });
+
   dom.exportBackupBtn.addEventListener("click", () => {
     exportRoadmapBackup().catch((error) => {
       window.alert(`Could not export backup: ${error.message}`);
@@ -120,11 +125,11 @@ function isInteractiveKeyboardTarget(target) {
 }
 
 function updateTabButtons() {
-  const tabActive = !["review", "journal", "map", "guide", "portfolio", "reference", "sources"].includes(state.view);
+  const tabActive = !["review", "journal", "map", "guide", "portfolio", "reference", "sources", "mirror"].includes(state.view);
   dom.tabButtons.forEach((button) => {
     button.classList.toggle("active", tabActive && button.dataset.tab === state.tab);
   });
-  dom.levelFilter.disabled = state.view === "review" || state.view === "journal";
+  dom.levelFilter.disabled = state.view === "review" || state.view === "journal" || state.view === "mirror";
   dom.journalTypeFilter.value = getActiveJournalTypeFilter();
   dom.journalTypeFilterGroup.hidden = state.view !== "journal";
 }
@@ -136,4 +141,5 @@ function updateViewButtons() {
   dom.portfolioBtn.classList.toggle("active", state.view === "portfolio");
   dom.referenceBtn.classList.toggle("active", state.view === "reference");
   dom.sourcesBtn.classList.toggle("active", state.view === "sources");
+  dom.mirrorBtn.classList.toggle("active", state.view === "mirror");
 }

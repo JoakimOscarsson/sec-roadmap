@@ -20,6 +20,7 @@ const dom = {
   exportBackupBtn: document.getElementById("exportBackupBtn"),
   importBackupBtn: document.getElementById("importBackupBtn"),
   importBackupInput: document.getElementById("importBackupInput"),
+  mirrorBtn: document.getElementById("mirrorBtn"),
   resetBtn: document.getElementById("resetBtn")
 };
 
@@ -31,6 +32,7 @@ window.roadmapReady = initializeApp();
 async function initializeApp() {
   state = await loadState();
   initializeControls();
+  initializeMirrorSync();
   bindEvents();
   render();
 }

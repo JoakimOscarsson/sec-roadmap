@@ -67,7 +67,7 @@ function normalizeState(saved) {
         specializations: saved?.selected?.specializations || ""
       },
       specializationTrack: typeof saved?.specializationTrack === "string" ? saved.specializationTrack : "",
-      view: ["overview", "track", "chapter", "map", "guide", "review", "journal", "portfolio", "reference", "sources"].includes(saved?.view)
+      view: ["overview", "track", "chapter", "map", "guide", "review", "journal", "portfolio", "reference", "sources", "mirror"].includes(saved?.view)
         ? saved.view
         : "overview"
     };
@@ -83,5 +83,9 @@ async function loadState() {
 
 function saveState() {
   const snapshot = normalizeState(state);
-  return savePersistedState(snapshot);
+  const persisted = savePersistedState(snapshot);
+  if (typeof scheduleMirrorSync === "function") {
+    persisted.then(() => scheduleMirrorSync("state-save")).catch(() => {});
+  }
+  return persisted;
 }
